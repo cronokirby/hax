@@ -23,6 +23,7 @@ library
   other-modules:
       Paths_hax
     , Resources.Load
+    , Resources.Sprite
   hs-source-dirs:
       src
   build-depends:
