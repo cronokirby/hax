@@ -15,7 +15,7 @@ import Resources.Sprite (SpriteIndex(..))
 -- | The window configuration for the game
 windowConfig :: SDL.WindowConfig
 windowConfig = SDL.defaultWindow
-    { SDL.windowInitialSize = V2 600 800
+    { SDL.windowInitialSize = V2 800 800
     }
 
 
