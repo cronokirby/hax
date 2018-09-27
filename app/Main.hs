@@ -1,6 +1,6 @@
 module Main where
 
-import Lib (run)
+import Hax (run)
 
 
 main :: IO ()
