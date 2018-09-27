@@ -22,12 +22,14 @@ library
       Hax
   other-modules:
       Paths_hax
+    , Game.World
     , Resources.Load
     , Resources.Sprite
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , apecs
     , sdl2
   default-language: Haskell2010
 
