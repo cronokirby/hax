@@ -10,7 +10,8 @@ import Data.Function ((&))
 import Control.Monad (mapM)
 import Foreign.C.Types (CInt)
 import qualified SDL -- Mainly imported for texture things
-import System.IO (FilePath)
+
+import Resources.Sprite
 
 
 -- | Used to contain the data for a Sprite and all its animations
@@ -19,9 +20,6 @@ data SpriteSheet = SpriteSheet !CInt !CInt !SDL.Texture
 
 -- | Contains all the sprite data for the game
 newtype SpriteData = SpriteData [SpriteSheet]
-
--- | Contains the necessary information to locate a Sprite's sheet
-data SpriteLocation = SpriteLocation !CInt !CInt !FilePath
 
 
 -- | Loads sprites from a list of locations into a renderer
