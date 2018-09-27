@@ -39,7 +39,7 @@ mainLoop renderer texture = do
     -- Set the window to black
     SDL.rendererDrawColor renderer $= V4 0 0 0 255
     SDL.clear renderer
-    let dest = Just $ Rectangle (P (V2 300 400)) (V2 30 30)
+    let dest = Just $ Rectangle (P (V2 300 700)) (V2 30 30)
     SDL.copy renderer texture Nothing dest
     SDL.present renderer
     unless quit (mainLoop renderer texture)
