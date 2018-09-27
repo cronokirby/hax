@@ -1,7 +1,7 @@
 {-|
 Description: Contains utilities for loading resources such as Sprites
 -}
-module Resource
+module Resources.Load
     (
     )
 where
