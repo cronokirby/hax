@@ -6,6 +6,7 @@ where
 
 import Apecs (runWith)
 import Control.Monad (unless)
+import Data.Word (Word32)
 import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 import qualified SDL
 
@@ -34,26 +35,29 @@ run = do
     -- Prepping rendering
     SDL.showWindow window
     -- Looping
-    mainLoop renderer spriteData world
+    ticks <- SDL.ticks
+    mainLoop renderer ticks spriteData world
     -- cleanup
     SDL.destroyWindow window
     SDL.quit
 
 
 -- | The main loop of the game
-mainLoop :: SDL.Renderer -> SpriteData -> World -> IO ()
-mainLoop renderer sprites world = do
+mainLoop :: SDL.Renderer -> Word32 -> SpriteData -> World -> IO ()
+mainLoop renderer ticks sprites world = do
     events <- SDL.pollEvents
     toggleCheck <- SDL.getKeyboardState
+    newTicks <- SDL.ticks
     let (quit, input) = handleKeys toggleCheck
-    playerPos <- runWith world (stepGame 0.01 input)
+        dT = fromIntegral (newTicks - ticks) / 1000
+    playerPos <- runWith world (stepGame dT input)
     -- Set the window to black
     SDL.rendererDrawColor renderer $= V4 0 0 0 255
     SDL.clear renderer
     let dest = Just $ Rectangle (P (round <$> playerPos)) (V2 30 30)
     renderSprite sprites SpSquare dest renderer
     SDL.present renderer
-    unless quit (mainLoop renderer sprites world)
+    unless quit (mainLoop renderer newTicks sprites world)
 
 
 handleKeys :: (SDL.Scancode -> Bool) -> (Bool, Maybe Direction)

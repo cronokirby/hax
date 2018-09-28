@@ -35,7 +35,7 @@ data Direction = DUp LRToggle | DLeft | DRight | DDown LRToggle
 -- | Converts a direction into instantaneous speed in px/s
 directionSpeed :: Maybe Direction -> Vec
 directionSpeed Nothing = 0
-directionSpeed (Just d) = 20 *^ dir d
+directionSpeed (Just d) = 220 *^ dir d
   where
     shift ToggleStraight = 0
     shift ToggleLeft     = V2 (-1) 0
