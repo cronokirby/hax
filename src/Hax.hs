@@ -4,10 +4,12 @@ module Hax
     )
 where
 
+import Apecs (runWith)
 import Control.Monad (unless)
 import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 import qualified SDL
 
+import Game.World
 import Resources.Load (SpriteData, loadProjectSprites, renderSprite)
 import Resources.Sprite (SpriteIndex(..))
 
@@ -15,7 +17,7 @@ import Resources.Sprite (SpriteIndex(..))
 -- | The window configuration for the game
 windowConfig :: SDL.WindowConfig
 windowConfig = SDL.defaultWindow
-    { SDL.windowInitialSize = V2 600 800
+    { SDL.windowInitialSize = V2 600 700
     }
 
 
@@ -27,27 +29,47 @@ run = do
     renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
     -- Initialising data
     spriteData <- loadProjectSprites renderer
+    world <- initWorld 
+    runWith world initialiseGame
     -- Prepping rendering
     SDL.showWindow window
     -- Looping
-    mainLoop renderer spriteData
+    mainLoop renderer spriteData world
     -- cleanup
     SDL.destroyWindow window
     SDL.quit
 
 
 -- | The main loop of the game
-mainLoop :: SDL.Renderer -> SpriteData -> IO ()
-mainLoop renderer sprites = do
+mainLoop :: SDL.Renderer -> SpriteData -> World -> IO ()
+mainLoop renderer sprites world = do
     events <- SDL.pollEvents
-    let quit = any isEscPressed events
+    toggleCheck <- SDL.getKeyboardState
+    let (quit, input) = handleKeys toggleCheck
+    playerPos <- runWith world (stepGame 0.01 input)
     -- Set the window to black
     SDL.rendererDrawColor renderer $= V4 0 0 0 255
     SDL.clear renderer
-    let dest = Just $ Rectangle (P (V2 300 700)) (V2 30 30)
+    let dest = Just $ Rectangle (P (round <$> playerPos)) (V2 30 30)
     renderSprite sprites SpSquare dest renderer
     SDL.present renderer
-    unless quit (mainLoop renderer sprites)
+    unless quit (mainLoop renderer sprites world)
+
+
+handleKeys :: (SDL.Scancode -> Bool) -> (Bool, Maybe Direction)
+handleKeys toggled = (quit, makeDir (map toggled keys))
+  where
+    keys = [SDL.ScancodeW, SDL.ScancodeS, SDL.ScancodeA, SDL.ScancodeD]
+    makeDir [True, _, True, _] = Just (DUp ToggleLeft)
+    makeDir [True, _, _, True] = Just (DUp ToggleRight)
+    makeDir [True, _, _, _]    = Just (DUp ToggleStraight)
+    makeDir [_, True, True, _] = Just (DDown ToggleLeft)
+    makeDir [_, True, _, True] = Just (DDown ToggleRight)
+    makeDir [_, True, _, _]    = Just (DDown ToggleStraight)
+    makeDir [_, _, True, _]    = Just DLeft
+    makeDir [_, _, _, True]    = Just DRight
+    makeDir _                  = Nothing
+    quit = toggled SDL.ScancodeEscape
 
 
 -- | Checks whether or not esc is pressed inside of this event
