@@ -38,11 +38,11 @@ directionSpeed Nothing = 0
 directionSpeed (Just d) = 20 *^ dir d
   where
     shift ToggleStraight = 0
-    shift ToggleLeft = V2 (-1) 0
-    shift ToggleRight = V2 1 0
-    dir DLeft = V2 (-1) 0
-    dir DRight = V2 1 0
-    dir (DUp t) = V2 0 (-1) + shift t
+    shift ToggleLeft     = V2 (-1) 0
+    shift ToggleRight    = V2 1 0
+    dir DLeft     = V2 (-1) 0
+    dir DRight    = V2 1 0
+    dir (DUp t)   = V2 0 (-1) + shift t
     dir (DDown t) = V2 0 1 + shift t
 
 
