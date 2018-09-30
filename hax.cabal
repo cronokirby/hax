@@ -22,8 +22,9 @@ library
       Hax
   other-modules:
       Paths_hax
+    , Drawing
+    , Game.Geometry
     , Game.World
-    , Resources.Load
     , Resources.Sprite
   hs-source-dirs:
       src

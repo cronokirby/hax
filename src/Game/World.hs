@@ -24,6 +24,8 @@ import Apecs
 import Control.Monad (void)
 import Linear (V2(..), (*^), (^*))
 
+import Game.Geometry
+
 
 -- | Represents the secondary direction
 data LRToggle = ToggleLeft | ToggleRight | ToggleStraight
@@ -46,18 +48,6 @@ directionSpeed (Just d) = 220 *^ dir d
     dir (DDown t) = V2 0 1 + shift t
 
 
--- | Utility type used for both positions and action vectors
-type Vec = V2 Double
-
-
-{- Actual Apecs stuff -}
-
--- | Represents the current position of some entity
-newtype Position = Position Vec
-
-instance Component Position where
-    type Storage Position = Map Position
-
 -- | Represents the current velocity of an entity in pixels/s
 -- Entities with velocities should always have positions,
 -- as the velocity acts on this position to make the entity move
@@ -78,18 +68,23 @@ instance Component Player where
     type Storage Player = Unique Player
 
 
-makeWorld "World" [''Position, ''Velocity, ''Player]
+makeWorld "World"
+    [ ''Position
+    , ''Velocity
+    , ''Look
+    , ''Player
+    ]
 
 type Game a = System World a
 
 
 -- | Initialises the game state with an initial player position
 initialiseGame :: Game ()
-initialiseGame = void $ 
-    newEntity (Player, Position playerPos, velocity)
-  where
-    playerPos = V2 300 600
-    velocity = Velocity 0
+initialiseGame =
+    let look = Look SquareShape Pink
+        pos = Position (V2 300 600)
+        velocity = Velocity 0
+    in void $ newEntity (Player, look, pos, velocity)
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Maybe Direction -> Game Vec

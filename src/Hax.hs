@@ -11,8 +11,7 @@ import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 import qualified SDL
 
 import Game.World
-import Resources.Load (SpriteData, loadProjectSprites, renderSprite)
-import Resources.Sprite (SpriteIndex(..))
+import Resources.Sprite (SpriteData, loadProjectSprites)
 
 
 -- | The window configuration for the game
@@ -54,8 +53,8 @@ mainLoop renderer ticks sprites world = do
     -- Set the window to black
     SDL.rendererDrawColor renderer $= V4 0 0 0 255
     SDL.clear renderer
-    let dest = Just $ Rectangle (P (round <$> playerPos)) (V2 30 30)
-    renderSprite sprites SpSquare dest renderer
+    let dest = Just $ Rectangle (P (round <$> playerPos)) (V2 20 20)
+    --renderSprite sprites SpSquare dest renderer
     SDL.present renderer
     unless quit (mainLoop renderer newTicks sprites world)
 
