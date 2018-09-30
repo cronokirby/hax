@@ -87,12 +87,11 @@ initialiseGame =
     in void $ newEntity (Player, look, pos, velocity)
 
 -- | Steps the game forward with a delta and player input
-stepGame :: Double -> Maybe Direction -> Game Vec
+stepGame :: Double -> Maybe Direction -> Game [(Position, Look)]
 stepGame dt playerDirection = do
     setPlayerSpeed playerDirection
     stepKinetic dt
-    ((Player, Position p):_) <- getAll
-    return p
+    getAll
 
 
 setPlayerSpeed :: Maybe Direction -> Game ()

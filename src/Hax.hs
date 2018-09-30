@@ -5,11 +5,12 @@ module Hax
 where
 
 import Apecs (runWith)
-import Control.Monad (unless)
+import Control.Monad (forM, unless)
 import Data.Word (Word32)
 import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 import qualified SDL
 
+import Drawing (renderLook)
 import Game.World
 import Resources.Sprite (SpriteData, loadProjectSprites)
 
@@ -49,12 +50,13 @@ mainLoop renderer ticks sprites world = do
     newTicks <- SDL.ticks
     let (quit, input) = handleKeys toggleCheck
         dT = fromIntegral (newTicks - ticks) / 1000
-    playerPos <- runWith world (stepGame dT input)
-    -- Set the window to black
-    SDL.rendererDrawColor renderer $= V4 0 0 0 255
+    toDraw <- runWith world (stepGame dT input)
+    
+    -- drawing
     SDL.clear renderer
-    let dest = Just $ Rectangle (P (round <$> playerPos)) (V2 20 20)
-    --renderSprite sprites SpSquare dest renderer
+    SDL.rendererDrawColor renderer $= V4 0 0 0 255
+    forM toDraw $ \(pos, look) ->
+        renderLook pos look sprites renderer
     SDL.present renderer
     unless quit (mainLoop renderer newTicks sprites world)
 

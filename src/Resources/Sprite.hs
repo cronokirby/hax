@@ -7,7 +7,11 @@ are always valid, and a mapping to file resources which must always
 be kept in sync with the actual resources folder used in development.
 -}
 module Resources.Sprite
-    ( SpriteData
+    ( SpriteIndex(..)
+    , SpriteSheet(..)
+    , sheetTexture
+    , SpriteData
+    , getSprite
     , loadProjectSprites
     )
 where
@@ -22,7 +26,6 @@ import SDL (Rectangle(..), Point(..), V2(..))
 -- | Contains the necessary information to locate a Sprite's sheet
 -- CInt is mainly used for conveniance of interaction with SDL
 data SpriteLocation = SpriteLocation !CInt !CInt !FilePath
-
 
 -- | The locations for sprites used in this project
 -- This should always be kept in sync with the /resources folder
@@ -62,6 +65,14 @@ getFrame (SpriteSheet w h texture) index = Just $
 
 -- | Contains all the sprite data for the game
 newtype SpriteData = SpriteData [SpriteSheet]
+
+-- | Gets the sprite sheet and frame corresponding to a given index
+-- This allows us to keep SpriteData's representation independent
+getSprite :: SpriteData -> SpriteIndex -> (SpriteSheet, Maybe (Rectangle CInt))
+getSprite (SpriteData sheets) index =
+    let (RawIndex sheetPos frame) = getRaw index
+        sheet = sheets !! sheetPos
+    in (sheet, getFrame sheet frame)
 
 
 -- | Loads sprites from a list of locations into a renderer
