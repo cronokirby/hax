@@ -42,7 +42,7 @@ clamp width height (Position (V2 x y)) =
       | otherwise = val
 
 -- | Represents the current shape of some entity
-data Shape = SquareShape
+data Shape = SquareShape | TriangleShape
 
 -- | Represents the current polarity of some entity
 data Polarity = Pink | Blue

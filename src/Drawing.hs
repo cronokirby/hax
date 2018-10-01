@@ -16,8 +16,10 @@ import Resources.Sprite
 
 -- | Gets the sprite index corresponding to a given look
 spriteIndex :: Look -> SpriteIndex
-spriteIndex (Look _ SquareShape Pink) = SpSquarePink
-spriteIndex (Look _ SquareShape Blue) = SpSquareBlue
+spriteIndex (Look _ SquareShape Pink)   = SpSquarePink
+spriteIndex (Look _ SquareShape Blue)   = SpSquareBlue
+spriteIndex (Look _ TriangleShape Pink) = SpTrianglePink
+spriteIndex (Look _ TriangleShape Blue) = SpTriangleBlue
 
 -- | Gets the destination rectangle for a sprite, given a central position
 getDestination :: Position -> Look -> SpriteSheet -> Maybe (Rectangle CInt)
