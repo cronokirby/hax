@@ -81,7 +81,7 @@ type Game a = System World a
 -- | Initialises the game state with an initial player position
 initialiseGame :: Game ()
 initialiseGame =
-    let look = Look SquareShape Pink
+    let look = Look 1.0 SquareShape Pink
         pos = Position (V2 300 600)
         velocity = Velocity 0
     in void $ newEntity (Player, look, pos, velocity)

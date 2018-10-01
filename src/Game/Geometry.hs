@@ -36,8 +36,8 @@ data Shape = SquareShape
 -- | Represents the current polarity of some entity
 data Polarity = Pink
 
--- | Represents how some entity appears, based on shape, color
-data Look = Look Shape Polarity
+-- | Represents how some entity appears, based on shape, color, and scale
+data Look = Look Double Shape Polarity
 
 instance Component Look where
     type Storage Look = Map Look
