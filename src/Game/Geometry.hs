@@ -45,7 +45,7 @@ clamp width height (Position (V2 x y)) =
 data Shape = SquareShape
 
 -- | Represents the current polarity of some entity
-data Polarity = Pink
+data Polarity = Pink | Blue
 
 -- | Represents how some entity appears, based on shape, color, and scale
 data Look = Look Double Shape Polarity

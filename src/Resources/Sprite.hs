@@ -31,7 +31,7 @@ data SpriteLocation = SpriteLocation !CInt !CInt !FilePath
 -- This should always be kept in sync with the /resources folder
 spriteLocations :: [SpriteLocation]
 spriteLocations = map makeLocation
-    [ (30, 30, "square.bmp")
+    [ (60, 60, "square.bmp")
     ]
   where
     spritePath = "resources/sprites/"
@@ -40,14 +40,15 @@ spriteLocations = map makeLocation
 
 -- | The global index of all possible sprites and animations
 -- The tag indicates the spritesheet, and the second the element
-data SpriteIndex = SpSquare
+data SpriteIndex = SpSquarePink | SpSquareBlue
 
 -- | Contains a raw index in (spritesheet, spriteframe) form
 data RawIndex = RawIndex !Int !Int
 
 -- | Maps sprite indices to a raw index
 getRaw :: SpriteIndex -> RawIndex
-getRaw SpSquare = RawIndex 0 0
+getRaw SpSquarePink = RawIndex 0 0
+getRaw SpSquareBlue = RawIndex 0 1
 
 
 -- | Used to contain the data for a Sprite and all its animations
@@ -60,7 +61,7 @@ sheetTexture (SpriteSheet _ _ texture) = texture
 -- | Returns the source rectangle given the index of a spritesheet
 getFrame :: SpriteSheet -> Int -> Maybe (Rectangle CInt)
 getFrame (SpriteSheet w h texture) index = Just $
-    Rectangle (P (V2 0 (w * fromIntegral index))) (V2 w h)
+    Rectangle (P (V2 (w * fromIntegral index) 0)) (V2 w h)
 
 
 -- | Contains all the sprite data for the game
