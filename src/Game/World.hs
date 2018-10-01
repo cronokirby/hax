@@ -14,6 +14,8 @@ module Game.World
     , LRToggle(..)
     , World
     , Game
+    , worldWidth
+    , worldHeight
     , initWorld
     , initialiseGame
     , stepGame
@@ -25,6 +27,14 @@ import Control.Monad (void)
 import Linear (V2(..), (*^), (^*))
 
 import Game.Geometry
+
+
+-- These are both constants to be used elsewhere
+worldWidth :: Double
+worldWidth = 600
+
+worldHeight :: Double
+worldHeight = 800
 
 
 -- | Represents the secondary direction
@@ -91,6 +101,7 @@ stepGame :: Double -> Maybe Direction -> Game [(Position, Look)]
 stepGame dt playerDirection = do
     setPlayerSpeed playerDirection
     stepKinetic dt
+    clampPlayer
     getAll
 
 
@@ -99,6 +110,10 @@ setPlayerSpeed direction = cmap $ \(Player, Velocity _) ->
     (Player, Velocity speed)
   where
     speed = directionSpeed direction
+
+clampPlayer :: Game ()
+clampPlayer = cmap $ \(Player, p) ->
+    (Player, clamp worldWidth worldHeight p)
 
 stepKinetic :: Double -> Game ()
 stepKinetic dT = cmap $ \(Position p, Velocity v) ->

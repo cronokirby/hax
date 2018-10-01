@@ -18,7 +18,7 @@ import Resources.Sprite (SpriteData, loadProjectSprites)
 -- | The window configuration for the game
 windowConfig :: SDL.WindowConfig
 windowConfig = SDL.defaultWindow
-    { SDL.windowInitialSize = V2 600 700
+    { SDL.windowInitialSize = round <$> V2 worldWidth worldHeight
     }
 
 

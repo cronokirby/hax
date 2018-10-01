@@ -14,11 +14,12 @@ module Game.Geometry
     , Shape(..)
     , Polarity(..)
     , Look(..)
+    , clamp
     )
 where
 
 import Apecs
-import Linear (V2)
+import Linear (V2(..))
 
 
 -- | Utility type since most of our vectors will look like this
@@ -29,6 +30,16 @@ newtype Position = Position Vec
 
 instance Component Position where
     type Storage Position = Map Position
+
+-- | Clamps x between 0 and width, and y between 0 and height
+clamp :: Double -> Double -> Position -> Position
+clamp width height (Position (V2 x y)) =
+    Position (V2 (clamp' width x) (clamp' height y))
+  where
+    clamp' mx val
+      | val < 0  = 0
+      | val > mx  = mx
+      | otherwise = val
 
 -- | Represents the current shape of some entity
 data Shape = SquareShape
