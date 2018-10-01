@@ -48,6 +48,7 @@ data Shape = SquareShape | TriangleShape
 data Polarity = Pink | Blue
 
 -- | Represents how some entity appears, based on shape, color, and scale
+-- The size parameter is the width of whatever shape we have
 data Look = Look Double Shape Polarity
 
 instance Component Look where
