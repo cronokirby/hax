@@ -23,8 +23,8 @@ spriteIndex (Look _ TriangleShape Blue) = SpTriangleBlue
 
 -- | Gets the destination rectangle for a sprite, given a central position
 getDestination :: Position -> Look -> SpriteSheet -> Maybe (Rectangle CInt)
-getDestination (Position pos) (Look scale _ _) (SpriteSheet w h texture) =
-    let shift = ((*scale) . fromIntegral) <$> V2 w h
+getDestination (Position pos) (Look width _ _) (SpriteSheet w h texture) =
+    let shift = V2 width (width / fromIntegral w * fromIntegral h)
         topLeft = pos - fmap (/ 2) shift
     in Just . fmap round $ Rectangle (P topLeft) shift
 
