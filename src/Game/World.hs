@@ -10,9 +10,7 @@
 Description: contains the things pertaining to the model of the game state
 -}
 module Game.World
-    ( Direction(..)
-    , LRToggle(..)
-    , World
+    ( World
     , Game
     , worldWidth
     , worldHeight
@@ -27,6 +25,7 @@ import Control.Monad (void)
 import Linear (V2(..), (*^), (^*))
 
 import Game.Geometry
+import Game.Input
 
 
 -- These are both constants to be used elsewhere
@@ -36,26 +35,16 @@ worldWidth = 600
 worldHeight :: Double
 worldHeight = 800
 
-
--- | Represents the secondary direction
-data LRToggle = ToggleLeft | ToggleRight | ToggleStraight
-
--- | Represents the directions of control of a player
--- 8 way control, with Up and Down having an addition L/R toggle
-data Direction = DUp LRToggle | DLeft | DRight | DDown LRToggle
-
 -- | Converts a direction into instantaneous speed in px/s
-directionSpeed :: Maybe Direction -> Vec
-directionSpeed Nothing = 0
-directionSpeed (Just d) = 220 *^ dir d
+directionSpeed :: Direction -> Vec
+directionSpeed (Direction lr ud) = (*160) <$>
+    defaultDir (fmap lrSpeed lr) + defaultDir (fmap udSpeed ud)
   where
-    shift ToggleStraight = 0
-    shift ToggleLeft     = V2 (-1) 0
-    shift ToggleRight    = V2 1 0
-    dir DLeft     = V2 (-1) 0
-    dir DRight    = V2 1 0
-    dir (DUp t)   = V2 0 (-1) + shift t
-    dir (DDown t) = V2 0 1 + shift t
+    defaultDir = maybe (V2 0 0) id
+    lrSpeed DLeft  = V2 (-1) 0
+    lrSpeed DRight = V2 1 0
+    udSpeed DUp    = V2 0 (-1)
+    udSpeed DDown  = V2 0 1
 
 
 -- | Represents the current velocity of an entity in pixels/s
@@ -97,19 +86,19 @@ initialiseGame =
     in void $ newEntity (Player, look, pos, velocity)
 
 -- | Steps the game forward with a delta and player input
-stepGame :: Double -> Maybe Direction -> Game [(Position, Look)]
-stepGame dt playerDirection = do
-    setPlayerSpeed playerDirection
+stepGame :: Double -> Input -> Game [(Position, Look)]
+stepGame dt input = do
+    setPlayerSpeed input
     stepKinetic dt
     clampPlayer
     getAll
 
 
-setPlayerSpeed :: Maybe Direction -> Game ()
-setPlayerSpeed direction = cmap $ \(Player, Velocity _) ->
+setPlayerSpeed :: Input -> Game ()
+setPlayerSpeed input = cmap $ \(Player, Velocity _) ->
     (Player, Velocity speed)
   where
-    speed = directionSpeed direction
+    speed = directionSpeed (inputDirection input)
 
 clampPlayer :: Game ()
 clampPlayer = cmap $ \(Player, p) ->

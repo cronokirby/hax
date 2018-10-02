@@ -24,6 +24,7 @@ library
       Paths_hax
     , Drawing
     , Game.Geometry
+    , Game.Input
     , Game.World
     , Resources.Sprite
   hs-source-dirs:

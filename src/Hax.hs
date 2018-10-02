@@ -11,6 +11,7 @@ import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 import qualified SDL
 
 import Drawing (renderLook)
+import Game.Input (Input, initialInput, gatherInput)
 import Game.World
 import Resources.Sprite (SpriteData, loadProjectSprites)
 
@@ -36,31 +37,32 @@ run = do
     SDL.showWindow window
     -- Looping
     ticks <- SDL.ticks
-    mainLoop renderer ticks spriteData world
+    mainLoop renderer ticks spriteData initialInput world
     -- cleanup
     SDL.destroyWindow window
     SDL.quit
 
 
 -- | The main loop of the game
-mainLoop :: SDL.Renderer -> Word32 -> SpriteData -> World -> IO ()
-mainLoop renderer ticks sprites world = do
+mainLoop :: SDL.Renderer -> Word32 -> SpriteData -> Input -> World -> IO ()
+mainLoop renderer ticks sprites input world = do
     events <- SDL.pollEvents
     toggleCheck <- SDL.getKeyboardState
     newTicks <- SDL.ticks
-    let (quit, input) = handleKeys toggleCheck
+    let escPressed = toggleCheck SDL.ScancodeEscape
+        newInput = gatherInput toggleCheck input
         dT = fromIntegral (newTicks - ticks) / 1000
-    toDraw <- runWith world (stepGame dT input)
-    
+    toDraw <- runWith world (stepGame dT newInput)
+
     -- drawing
     SDL.clear renderer
     SDL.rendererDrawColor renderer $= V4 0 0 0 255
     forM toDraw $ \(pos, look) ->
         renderLook pos look sprites renderer
     SDL.present renderer
-    unless quit (mainLoop renderer newTicks sprites world)
+    unless escPressed (mainLoop renderer newTicks sprites input world)
 
-
+{-
 handleKeys :: (SDL.Scancode -> Bool) -> (Bool, Maybe Direction)
 handleKeys toggled = (quit, makeDir (map toggled keys))
   where
@@ -75,6 +77,7 @@ handleKeys toggled = (quit, makeDir (map toggled keys))
     makeDir [_, _, _, True]    = Just DRight
     makeDir _                  = Nothing
     quit = toggled SDL.ScancodeEscape
+-}
 
 
 -- | Checks whether or not esc is pressed inside of this event
