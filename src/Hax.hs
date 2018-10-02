@@ -60,7 +60,7 @@ mainLoop renderer ticks sprites input world = do
     forM toDraw $ \(pos, look) ->
         renderLook pos look sprites renderer
     SDL.present renderer
-    unless escPressed (mainLoop renderer newTicks sprites input world)
+    unless escPressed (mainLoop renderer newTicks sprites newInput world)
 
 {-
 handleKeys :: (SDL.Scancode -> Bool) -> (Bool, Maybe Direction)

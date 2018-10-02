@@ -2,7 +2,8 @@
 Description: Contains utility types and functions for handling input.
 -}
 module Game.Input
-    ( ToggleInput
+    ( ToggleInput(..)
+    , advanceToggle
     , getToggle
     , HeldInput
     , getHeld
@@ -22,7 +23,7 @@ import qualified SDL
 -- | Describes an input that toggles some kind of actions
 -- We want this to behave such that a held button doesn't trigger
 -- firing more than once.
-data ToggleInput = ToggleInput !Bool !Bool
+data ToggleInput = ToggleInput !Bool !Bool deriving Show
 
 -- | Advanced the state of a held input based on the current frame
 advanceToggle :: Bool -> ToggleInput -> ToggleInput

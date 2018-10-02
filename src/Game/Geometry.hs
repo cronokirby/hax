@@ -14,6 +14,7 @@ module Game.Geometry
     , Shape(..)
     , Polarity(..)
     , Look(..)
+    , switchPolarity
     , clamp
     )
 where
@@ -53,3 +54,7 @@ data Look = Look Double Shape Polarity
 
 instance Component Look where
     type Storage Look = Map Look
+
+switchPolarity :: Look -> Look
+switchPolarity (Look scale shape Pink) = Look scale shape Blue
+switchPolarity (Look scale shape Blue) = Look scale shape Pink

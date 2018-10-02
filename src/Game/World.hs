@@ -89,17 +89,20 @@ initialiseGame =
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game [(Position, Look)]
 stepGame dt input = do
-    setPlayerSpeed input
+    handlePlayer input
     stepKinetic dt
     clampPlayer
     getAll
 
 
-setPlayerSpeed :: Input -> Game ()
-setPlayerSpeed input = cmap $ \(Player, Velocity _) ->
-    (Player, Velocity speed)
-  where
-    speed = getSpeed input
+handlePlayer :: Input -> Game ()
+handlePlayer input = do
+    cmap $ \(Player, Velocity _, l) ->
+        let speed = getSpeed input
+            newLook = if (getToggle . inputSwitch) input
+                then switchPolarity l
+                else l
+        in (Player, Velocity speed, newLook)
 
 clampPlayer :: Game ()
 clampPlayer = cmap $ \(Player, p) ->
