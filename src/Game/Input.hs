@@ -68,7 +68,7 @@ checkDirection leftRights upDowns = Direction
 data Input = Input
     { inputShooting :: HeldInput -- ^ Whether or not we're shooting
     , inputSwitch :: ToggleInput -- ^ Trigger polarity switch
-    , inputFast :: HeldInput -- ^ Whether or not to move faster
+    , inputSlow :: HeldInput -- ^ Whether or not to move slower
     , inputDirection :: Direction -- ^ What direction is being input
     }
 

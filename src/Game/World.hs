@@ -38,10 +38,10 @@ worldHeight = 800
 
 -- | Converts a direction into instantaneous speed in px/s
 getSpeed :: Input -> Vec
-getSpeed (Input _ _ fast (Direction lr ud)) = (* speed) <$>
+getSpeed (Input _ _ slow (Direction lr ud)) = (* speed) <$>
     defaultDir (fmap lrSpeed lr) + defaultDir (fmap udSpeed ud)
   where
-    speed = if getHeld fast then 320 else 160
+    speed = if getHeld slow then 160 else 340
     defaultDir = fromMaybe (V2 0 0)
     lrSpeed DLeft  = V2 (-1) 0
     lrSpeed DRight = V2 1 0
