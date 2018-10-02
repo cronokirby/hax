@@ -49,18 +49,19 @@ mainLoop renderer ticks sprites input world = do
     events <- SDL.pollEvents
     toggleCheck <- SDL.getKeyboardState
     newTicks <- SDL.ticks
-    let escPressed = toggleCheck SDL.ScancodeEscape
+    let quit = any shouldQuit events
         newInput = gatherInput toggleCheck input
         dT = fromIntegral (newTicks - ticks) / 1000
     toDraw <- runWith world (stepGame dT newInput)
     drawSprites toDraw sprites renderer
-    unless escPressed (mainLoop renderer newTicks sprites newInput world)
+    unless quit (mainLoop renderer newTicks sprites newInput world)
 
 
--- | Checks whether or not esc is pressed inside of this event
-isEscPressed :: SDL.Event -> Bool
-isEscPressed event = case SDL.eventPayload event of
+-- | This is true of the window needs to close, or esc is prssed
+shouldQuit :: SDL.Event -> Bool
+shouldQuit event = case SDL.eventPayload event of
     SDL.KeyboardEvent kb ->
         SDL.keyboardEventKeyMotion kb == SDL.Pressed &&
         SDL.keysymKeycode (SDL.keyboardEventKeysym kb) == SDL.KeycodeEscape
+    SDL.QuitEvent -> True
     _ -> False
