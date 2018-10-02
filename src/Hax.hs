@@ -7,10 +7,10 @@ where
 import Apecs (runWith)
 import Control.Monad (forM, unless)
 import Data.Word (Word32)
-import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
+import Linear (V2(..))
 import qualified SDL
 
-import Drawing (renderLook)
+import Drawing (drawSprites)
 import Game.Input (Input, initialInput, gatherInput)
 import Game.World
 import Resources.Sprite (SpriteData, loadProjectSprites)
@@ -53,31 +53,8 @@ mainLoop renderer ticks sprites input world = do
         newInput = gatherInput toggleCheck input
         dT = fromIntegral (newTicks - ticks) / 1000
     toDraw <- runWith world (stepGame dT newInput)
-
-    -- drawing
-    SDL.clear renderer
-    SDL.rendererDrawColor renderer $= V4 0 0 0 255
-    forM toDraw $ \(pos, look) ->
-        renderLook pos look sprites renderer
-    SDL.present renderer
+    drawSprites toDraw sprites renderer
     unless escPressed (mainLoop renderer newTicks sprites newInput world)
-
-{-
-handleKeys :: (SDL.Scancode -> Bool) -> (Bool, Maybe Direction)
-handleKeys toggled = (quit, makeDir (map toggled keys))
-  where
-    keys = [SDL.ScancodeW, SDL.ScancodeS, SDL.ScancodeA, SDL.ScancodeD]
-    makeDir [True, _, True, _] = Just (DUp ToggleLeft)
-    makeDir [True, _, _, True] = Just (DUp ToggleRight)
-    makeDir [True, _, _, _]    = Just (DUp ToggleStraight)
-    makeDir [_, True, True, _] = Just (DDown ToggleLeft)
-    makeDir [_, True, _, True] = Just (DDown ToggleRight)
-    makeDir [_, True, _, _]    = Just (DDown ToggleStraight)
-    makeDir [_, _, True, _]    = Just DLeft
-    makeDir [_, _, _, True]    = Just DRight
-    makeDir _                  = Nothing
-    quit = toggled SDL.ScancodeEscape
--}
 
 
 -- | Checks whether or not esc is pressed inside of this event

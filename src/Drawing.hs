@@ -2,13 +2,14 @@
 Description: Contains utility functions for drawing sprites
 -}
 module Drawing
-    (renderLook
+    (drawSprites
     )
 where
 
+import Control.Monad (forM)
 import Foreign.C.Types (CInt)
 import qualified SDL
-import SDL (Rectangle(..), Point(..), V2(..))
+import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 
 import Game.Geometry
 import Resources.Sprite
@@ -36,3 +37,18 @@ renderLook position look sprites renderer =
         (sheet, source) = getSprite sprites index
         dest = getDestination position look sheet
     in SDL.copy renderer (sheetTexture sheet) source dest
+
+-- | Clears the background
+clearScreen :: SDL.Renderer -> IO ()
+clearScreen renderer = do
+    SDL.clear renderer
+    SDL.rendererDrawColor renderer $= V4 0 0 0 255
+
+
+-- | Draws all the sprites, including the background
+drawSprites :: [(Position, Look)] -> SpriteData -> SDL.Renderer -> IO ()
+drawSprites toDraw sprites renderer = do
+    clearScreen renderer
+    forM toDraw $ \(pos, look) ->
+        renderLook pos look sprites renderer
+    SDL.present renderer
