@@ -36,10 +36,11 @@ worldHeight :: Double
 worldHeight = 800
 
 -- | Converts a direction into instantaneous speed in px/s
-directionSpeed :: Direction -> Vec
-directionSpeed (Direction lr ud) = (*160) <$>
+getSpeed :: Input -> Vec
+getSpeed (Input _ _ fast (Direction lr ud)) = (* speed) <$>
     defaultDir (fmap lrSpeed lr) + defaultDir (fmap udSpeed ud)
   where
+    speed = if getHeld fast then 320 else 160
     defaultDir = maybe (V2 0 0) id
     lrSpeed DLeft  = V2 (-1) 0
     lrSpeed DRight = V2 1 0
@@ -98,7 +99,7 @@ setPlayerSpeed :: Input -> Game ()
 setPlayerSpeed input = cmap $ \(Player, Velocity _) ->
     (Player, Velocity speed)
   where
-    speed = directionSpeed (inputDirection input)
+    speed = getSpeed input
 
 clampPlayer :: Game ()
 clampPlayer = cmap $ \(Player, p) ->

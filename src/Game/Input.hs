@@ -67,6 +67,7 @@ checkDirection leftRights upDowns = Direction
 data Input = Input
     { inputShooting :: HeldInput -- ^ Whether or not we're shooting
     , inputSwitch :: ToggleInput -- ^ Trigger polarity switch
+    , inputFast :: HeldInput -- ^ Whether or not to move faster
     , inputDirection :: Direction -- ^ What direction is being input
     }
 
@@ -75,16 +76,19 @@ initialInput :: Input
 initialInput = Input
     (HeldInput False)
     makeToggle
+    (HeldInput False)
     (Direction Nothing Nothing)
 
 -- | Gathers input based on what scancodes are currently activated
 -- Requires the previous input state to be able to advance the state
 -- of input gathering.
 gatherInput :: (SDL.Scancode -> Bool) -> Input -> Input
-gatherInput toggle (Input _ oldSwitch _) = Input shooting switch direction
+gatherInput toggle (Input _ oldSwitch _ _) =
+    Input shooting switch fast direction
   where
     shooting = HeldInput (toggle SDL.ScancodeJ)
     switch = advanceToggle (toggle SDL.ScancodeK) oldSwitch
+    fast = HeldInput (toggle SDL.ScancodeL)
     leftRights = map toggle [SDL.ScancodeA, SDL.ScancodeD]
     upDowns = map toggle [SDL.ScancodeW, SDL.ScancodeS]
     direction = checkDirection leftRights upDowns
