@@ -11,6 +11,9 @@ Having definitions of geometry is also necessary for drawing.
 module Game.Geometry
     ( Vec
     , Position(..)
+    , Velocity(..)
+    , Angle(..)
+    , AngularV(..)
     , Shape(..)
     , Polarity(..)
     , Look(..)
@@ -20,7 +23,7 @@ module Game.Geometry
 where
 
 import Apecs
-import Linear (V2(..))
+import Linear (V2(..), (^*))
 
 
 -- | Utility type since most of our vectors will look like this
@@ -41,6 +44,33 @@ clamp width height (Position (V2 x y)) =
       | val < 0  = 0
       | val > mx  = mx
       | otherwise = val
+
+
+-- | Represents the current velocity of an entity in pixels/s
+-- Entities with velocities should always have positions,
+-- as the velocity acts on this position to make the entity move
+newtype Velocity = Velocity Vec
+
+instance Component Velocity where
+    type Storage Velocity = Map Velocity
+
+-- | Given a fraction of a second, and a velocity, advance a position
+move :: Double -> Velocity -> Position -> Position
+move dT (Velocity v) (Position p) = Position (p + v ^* dT)
+
+
+-- | Represents the current angle of rotation in degrees
+newtype Angle = Angle Double
+
+instance Component Angle where
+    type Storage Angle = Map Angle
+
+-- | Represents the current change of angle, in degrees per second
+newtype AngularV = AngularV Double
+
+instance Component AngularV where
+    type Storage AngularV = Map AngularV
+
 
 -- | Represents the current shape of some entity
 data Shape = SquareShape | TriangleShape

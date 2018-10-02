@@ -23,7 +23,7 @@ where
 import Apecs
 import Control.Monad (when, void)
 import Data.Maybe (fromMaybe)
-import Linear (V2(..), (*^), (^*))
+import Linear (V2(..), (^*))
 
 import Game.Geometry
 import Game.Input
@@ -49,21 +49,9 @@ getSpeed (Input _ _ slow (Direction lr ud)) = (* speed) <$>
     udSpeed DDown  = V2 0 1
 
 
--- | Represents the current velocity of an entity in pixels/s
--- Entities with velocities should always have positions,
--- as the velocity acts on this position to make the entity move
-newtype Velocity = Velocity Vec
-
-instance Component Velocity where
-    type Storage Velocity = Map Velocity
-
--- | Given a fraction of a second, and a velocity, advance a position
-move :: Double -> Velocity -> Position -> Position
-move dT (Velocity v) (Position p) = Position (p + v ^* dT)
-
-
 type Kinetic = (Position, Velocity)
-type Visible = (Look, Kinetic)
+type Spinning = (Angle, AngularV)
+type Visible = (Look, Kinetic, Spinning)
 
 -- | Represents whether or not this entity is the player
 -- Each player has a shooting rate
@@ -76,6 +64,8 @@ instance Component Player where
 makeWorld "World"
     [ ''Position
     , ''Velocity
+    , ''Angle
+    , ''AngularV
     , ''Look
     , ''Player
     ]
@@ -86,16 +76,17 @@ type Game a = System World a
 -- | Initialises the game state with an initial player position
 initialiseGame :: Game ()
 initialiseGame =
-    let look = Look 36 SquareShape Pink
+    let look = Look 28 SquareShape Pink
         pos = Position (V2 300 600)
         velocity = Velocity 0
     in void $ newEntity (Player 0, look, pos, velocity)
 
 -- | Steps the game forward with a delta and player input
-stepGame :: Double -> Input -> Game [(Position, Look)]
+stepGame :: Double -> Input -> Game [(Position, Maybe Angle, Look)]
 stepGame dT input = do
     handleInput dT input
     stepKinetic dT
+    stepSpinning dT
     clampPlayer
     deleteOffscreen
     getAll
@@ -127,10 +118,12 @@ handleInput dT input = do
     -- Creates a new bullet with the same color as Look above position
     makeBullet :: Look -> Position -> Game ()
     makeBullet (Look size _ polarity) (Position p) =
-        let look = Look 16 SquareShape polarity
+        let look = Look 12 SquareShape polarity
             velocity = Velocity (V2 0 (-800))
             position = Position (p - V2 0 size)
-        in void $ newEntity (look, position, velocity)
+            angle = Angle 0
+            angularV = AngularV 360
+        in void $ newEntity (look, position, velocity, angle, angularV)
 
 
 -- | Keeps player within bounds
@@ -144,6 +137,10 @@ stepKinetic :: Double -> Game ()
 stepKinetic dT = cmap $ \(Position p, Velocity v) ->
     (Position (p + v ^* dT), Velocity v)
 
+-- | Moves all spinning objects forward
+stepSpinning :: Double -> Game ()
+stepSpinning dT = cmap $ \(Angle a, AngularV v) ->
+    (Angle (a + v * dT), AngularV v)
 
 -- | Deletes all visible particles whose position is offscreen
 deleteOffscreen :: Game ()
