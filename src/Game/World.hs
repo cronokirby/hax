@@ -21,7 +21,7 @@ module Game.World
 where
 
 import Apecs
-import Control.Monad (void)
+import Control.Monad (when, void)
 import Data.Maybe (fromMaybe)
 import Linear (V2(..), (*^), (^*))
 
@@ -62,8 +62,12 @@ move :: Double -> Velocity -> Position -> Position
 move dT (Velocity v) (Position p) = Position (p + v ^* dT)
 
 
+type Kinetic = (Position, Velocity)
+type Visible = (Look, Kinetic)
+
 -- | Represents whether or not this entity is the player
-data Player = Player
+-- Each player has a shooting rate
+data Player = Player Double
 
 instance Component Player where
     type Storage Player = Unique Player
@@ -85,30 +89,65 @@ initialiseGame =
     let look = Look 36 SquareShape Pink
         pos = Position (V2 300 600)
         velocity = Velocity 0
-    in void $ newEntity (Player, look, pos, velocity)
+    in void $ newEntity (Player 0, look, pos, velocity)
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game [(Position, Look)]
-stepGame dt input = do
-    handlePlayer input
-    stepKinetic dt
+stepGame dT input = do
+    handleInput dT input
+    stepKinetic dT
     clampPlayer
+    deleteOffscreen
     getAll
 
 
-handlePlayer :: Input -> Game ()
-handlePlayer input = do
-    cmap $ \(Player, Velocity _, l) ->
+-- | Changes the game based on the player's input
+handleInput :: Double -> Input -> Game ()
+handleInput dT input = do
+    cmap (handlePlayer dT)
+    when ((getHeld . inputShooting) input) . void $ cmapM shoot
+  where
+    handlePlayer :: Double -> (Player, Velocity, Look) -> (Player, Velocity, Look)
+    handlePlayer dT (Player reload, _, l) =
         let speed = getSpeed input
             newLook = if (getToggle . inputSwitch) input
                 then switchPolarity l
                 else l
-        in (Player, Velocity speed, newLook)
+        in (Player (reload - dT), Velocity speed, newLook)
+    shoot :: (Player, Look, Position) -> Game (Player, Look, Position)
+    shoot all@(Player r, look, p) = do
+        if r <= 0
+            then do
+                makeBullet look p
+                return (Player 0.1, look, p)
+            else return all
+    makeBullet :: Look -> Position -> Game ()
+    makeBullet (Look size _ polarity) (Position p) =
+        let look = Look 16 SquareShape polarity
+            velocity = Velocity (V2 0 (-800))
+            position = Position (p - V2 0 size)
+        in void $ newEntity (look, position, velocity)
 
+-- | Keeps player within bounds
 clampPlayer :: Game ()
-clampPlayer = cmap $ \(Player, p) ->
-    (Player, clamp worldWidth worldHeight p)
+clampPlayer = cmap $ \(Player r, look@(Look size _ _), p) ->
+    (Player r, look, clamp worldWidth worldHeight p)
 
+
+-- | Moves all kinetic objects forward
 stepKinetic :: Double -> Game ()
 stepKinetic dT = cmap $ \(Position p, Velocity v) ->
     (Position (p + v ^* dT), Velocity v)
+
+
+-- | Deletes all visible particles whose position is offscreen
+deleteOffscreen :: Game ()
+deleteOffscreen = cmap delete
+  where
+    delete :: (Position, Look, Not Player) -> Either (Position, Look) (Not Visible)
+    delete (pos@(Position (V2 x y)), look@(Look size _ _), _) =
+        if inBounds x worldWidth && inBounds y worldHeight
+            then Left (pos, look)
+            else Right Not
+      where
+        inBounds s mx = s - size <= mx && s + size >= 0
