@@ -107,6 +107,7 @@ handleInput dT input = do
     cmap (handlePlayer dT)
     when ((getHeld . inputShooting) input) . void $ cmapM shoot
   where
+    -- Sets player speed, decrements reload counter, and switches polarity
     handlePlayer :: Double -> (Player, Velocity, Look) -> (Player, Velocity, Look)
     handlePlayer dT (Player reload, _, l) =
         let speed = getSpeed input
@@ -114,6 +115,8 @@ handleInput dT input = do
                 then switchPolarity l
                 else l
         in (Player (reload - dT), Velocity speed, newLook)
+    -- Creates a new bullet when the player can shoot, and resets
+    -- there reload value if shot.
     shoot :: (Player, Look, Position) -> Game (Player, Look, Position)
     shoot all@(Player r, look, p) = do
         if r <= 0
@@ -121,12 +124,14 @@ handleInput dT input = do
                 makeBullet look p
                 return (Player 0.1, look, p)
             else return all
+    -- Creates a new bullet with the same color as Look above position
     makeBullet :: Look -> Position -> Game ()
     makeBullet (Look size _ polarity) (Position p) =
         let look = Look 16 SquareShape polarity
             velocity = Velocity (V2 0 (-800))
             position = Position (p - V2 0 size)
         in void $ newEntity (look, position, velocity)
+
 
 -- | Keeps player within bounds
 clampPlayer :: Game ()
