@@ -49,8 +49,6 @@ getSpeed (Input _ _ slow (Direction lr ud)) = (* speed) <$>
     udSpeed DDown  = V2 0 1
 
 
-type Kinetic = (Position, Velocity)
-type Spinning = (Angle, AngularV)
 type Visible = (Look, Kinetic, Spinning)
 
 -- | Represents whether or not this entity is the player

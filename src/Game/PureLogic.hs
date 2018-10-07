@@ -13,10 +13,12 @@ module Game.PureLogic
     ( Vec
     , Position(..)
     , Velocity(..)
+    , Kinetic
     , noVelocity
     , move
     , Angle(..)
     , AngularV(..)
+    , Spinning
     , Shape(..)
     , Polarity(..)
     , Look(..)
@@ -28,12 +30,13 @@ module Game.PureLogic
     , makeTimeLineRepeat
     , EnemyTag
     , Enemy
-    , makeEnemy
     , makeStaticEnemy
     , LevelEvents(..)
     , mainLevel
     )
 where
+
+import Data.Function ((&))
 
 import Apecs
 import Linear (V2(..), (^*))
@@ -67,6 +70,8 @@ newtype Velocity = Velocity Vec
 instance Component Velocity where
     type Storage Velocity = Map Velocity
 
+type Kinetic = (Position, Velocity)
+
 -- | Null velocity
 noVelocity :: Velocity
 noVelocity = Velocity (V2 0 0)
@@ -87,6 +92,8 @@ newtype AngularV = AngularV Double
 
 instance Component AngularV where
     type Storage AngularV = Map AngularV
+
+type Spinning = (Angle, AngularV)
 
 
 -- | Represents the current shape of some entity
@@ -158,15 +165,24 @@ data EnemyTag = EnemyTag
 instance Component EnemyTag where
     type Storage EnemyTag = Map EnemyTag
 
-type Enemy = (EnemyTag, Position, Velocity, Look)
-
--- | Creates an enemy with a position, look, and velocity
-makeEnemy :: Position -> Velocity -> Look -> Enemy
-makeEnemy pos vel look = (EnemyTag, pos, vel, look)
+type Enemy = (EnemyTag, Kinetic, Spinning, Look)
 
 -- | Creates an enemy that isn't moving
 makeStaticEnemy :: Position -> Look -> Enemy
-makeStaticEnemy pos = makeEnemy pos noVelocity
+makeStaticEnemy pos look = 
+    let kinetic = (pos, noVelocity)
+        spinning = (Angle 0, AngularV 0)
+    in (EnemyTag, kinetic, spinning, look)
+
+-- | Modify the velocity of an enemy
+enemyWithVelocity :: Velocity -> Enemy -> Enemy
+enemyWithVelocity v (tag, (pos, _), spinning, look) = 
+    (tag, (pos, v), spinning, look)
+
+-- | Modify the angular velocity of an enemy
+enemyWithRotation :: AngularV -> Enemy -> Enemy
+enemyWithRotation omega (tag, kinetic, (angle, _), look) =
+    (tag, kinetic, (angle, omega), look)
 
 
 -- | Represents the events that can occur in a level
@@ -177,11 +193,12 @@ data LevelEvents
 mainLevel :: TimeLine LevelEvents
 mainLevel = makeTimeLineOnce
     [ (1, enemyPos (V2 100 100) Pink)
-    , (1, enemyPos (V2 500 100) Blue)
+    , (1.1, enemyPos (V2 500 100) Blue)
     , (2, enemyPos (V2 100 200) Pink)
-    , (2, enemyPos (V2 500 200) Blue)
+    , (2.1, enemyPos (V2 500 200) Blue)
     ]
   where
-    enemyLook = Look 28 TriangleShape
-    enemyPos pos pol =
-        CreateEnemy (makeStaticEnemy (Position pos) (enemyLook pol))
+    enemyLook = Look 28 SquareShape
+    enemyPos pos pol = makeStaticEnemy (Position pos) (enemyLook pol)
+        & enemyWithRotation (AngularV 120)
+        & CreateEnemy
