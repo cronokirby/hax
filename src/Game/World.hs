@@ -109,12 +109,11 @@ handleInput dT input = do
     -- Creates a new bullet when the player can shoot, and resets
     -- there reload value if shot.
     shoot :: (Player, Look, Position) -> Game (Player, Look, Position)
-    shoot all@(Player r, look, p) = do
-        if r <= 0
-            then do
-                makeBullet look p
-                return (Player 0.1, look, p)
-            else return all
+    shoot all@(Player r, look, p) = if r <= 0
+        then do
+            makeBullet look p
+            return (Player 0.1, look, p)
+        else return all
     -- Creates a new bullet with the same color as Look above position
     makeBullet :: Look -> Position -> Game ()
     makeBullet (Look size _ polarity) (Position p) =
