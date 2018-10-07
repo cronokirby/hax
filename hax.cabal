@@ -23,8 +23,8 @@ library
   other-modules:
       Paths_hax
     , Drawing
-    , Game.Geometry
     , Game.Input
+    , Game.PureLogic
     , Game.World
     , Resources.Sprite
   hs-source-dirs:

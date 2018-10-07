@@ -25,7 +25,7 @@ import Control.Monad (when, void)
 import Data.Maybe (fromMaybe)
 import Linear (V2(..), (^*))
 
-import Game.Geometry
+import Game.PureLogic
 import Game.Input
 
 
@@ -55,10 +55,16 @@ type Visible = (Look, Kinetic, Spinning)
 
 -- | Represents whether or not this entity is the player
 -- Each player has a shooting rate
-data Player = Player Double
+newtype Player = Player Double
 
 instance Component Player where
     type Storage Player = Unique Player
+
+-- | Represents the global timeline for the game
+newtype GlobalTimeLine = GlobalTimeLine (TimeLine LevelEvents)
+
+instance Component GlobalTimeLine where
+    type Storage GlobalTimeLine = Unique GlobalTimeLine
 
 
 makeWorld "World"
@@ -68,6 +74,7 @@ makeWorld "World"
     , ''AngularV
     , ''Look
     , ''Player
+    , ''GlobalTimeLine
     ]
 
 type Game a = System World a
@@ -79,12 +86,16 @@ initialiseGame =
     let look = Look 28 SquareShape Pink
         pos = Position (V2 300 600)
         velocity = Velocity 0
-    in void $ newEntity (Player 0, look, pos, velocity)
+    in void $ do
+        newEntity (Player 0, look, pos, velocity)
+        newEntity . GlobalTimeLine . makeTimeLineOnce $ 
+            [(1, CreateEnemy (Position (V2 100 100)) (Look 28 SquareShape Pink))]
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game [(Position, Maybe Angle, Look)]
 stepGame dT input = do
     handleInput dT input
+    handleTimeLine dT
     stepKinetic dT
     stepSpinning dT
     clampPlayer
@@ -124,12 +135,16 @@ handleInput dT input = do
             angularV = AngularV 720
         in void $ newEntity (look, position, velocity, angle, angularV)
 
-
--- | Keeps player within bounds
-clampPlayer :: Game ()
-clampPlayer = cmap $ \(Player r, look@(Look size _ _), p) ->
-    (Player r, look, clamp worldWidth worldHeight p)
-
+-- | Steps the timeLine forward, and handles the events
+handleTimeLine :: Double -> Game ()
+handleTimeLine dT = cmapM $ \(GlobalTimeLine tl) -> do
+    let (newTl, event) = stepTimeLine tl dT
+    maybe (return ()) handleEvent event
+    return (GlobalTimeLine newTl)
+  where
+    handleEvent (CreateEnemy pos look) = 
+        let vel = Velocity (V2 0 0) 
+        in void $ newEntity (pos, vel, look)
 
 -- | Moves all kinetic objects forward
 stepKinetic :: Double -> Game ()
@@ -140,6 +155,12 @@ stepKinetic dT = cmap $ \(Position p, Velocity v) ->
 stepSpinning :: Double -> Game ()
 stepSpinning dT = cmap $ \(Angle a, AngularV v) ->
     (Angle (a + v * dT), AngularV v)
+
+
+-- | Keeps player within bounds
+clampPlayer :: Game ()
+clampPlayer = cmap $ \(Player r, look@(Look size _ _), p) ->
+    (Player r, look, clamp worldWidth worldHeight p)
 
 -- | Deletes all visible particles whose position is offscreen
 deleteOffscreen :: Game ()
