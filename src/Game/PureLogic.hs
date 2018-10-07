@@ -13,6 +13,8 @@ module Game.PureLogic
     ( Vec
     , Position(..)
     , Velocity(..)
+    , noVelocity
+    , move
     , Angle(..)
     , AngularV(..)
     , Shape(..)
@@ -24,7 +26,12 @@ module Game.PureLogic
     , stepTimeLine
     , makeTimeLineOnce
     , makeTimeLineRepeat
+    , EnemyTag
+    , Enemy
+    , makeEnemy
+    , makeStaticEnemy
     , LevelEvents(..)
+    , mainLevel
     )
 where
 
@@ -59,6 +66,10 @@ newtype Velocity = Velocity Vec
 
 instance Component Velocity where
     type Storage Velocity = Map Velocity
+
+-- | Null velocity
+noVelocity :: Velocity
+noVelocity = Velocity (V2 0 0)
 
 -- | Given a fraction of a second, and a velocity, advance a position
 move :: Double -> Velocity -> Position -> Position
@@ -142,7 +153,35 @@ makeTimeLineRepeat :: [(Double, a)] -> TimeLine a
 makeTimeLineRepeat = timeLineRepeat . RepeatTimeLine 0 0
 
 
+data EnemyTag = EnemyTag
+
+instance Component EnemyTag where
+    type Storage EnemyTag = Map EnemyTag
+
+type Enemy = (EnemyTag, Position, Velocity, Look)
+
+-- | Creates an enemy with a position, look, and velocity
+makeEnemy :: Position -> Velocity -> Look -> Enemy
+makeEnemy pos vel look = (EnemyTag, pos, vel, look)
+
+-- | Creates an enemy that isn't moving
+makeStaticEnemy :: Position -> Look -> Enemy
+makeStaticEnemy pos = makeEnemy pos noVelocity
+
 
 -- | Represents the events that can occur in a level
 data LevelEvents 
-    = CreateEnemy Position Look -- ^ Create a new enemy at a position
+    = CreateEnemy Enemy -- ^ Create a new enemy at a position
+
+
+mainLevel :: TimeLine LevelEvents
+mainLevel = makeTimeLineOnce
+    [ (1, enemyPos (V2 100 100) Pink)
+    , (1, enemyPos (V2 500 100) Blue)
+    , (2, enemyPos (V2 100 200) Pink)
+    , (2, enemyPos (V2 500 200) Blue)
+    ]
+  where
+    enemyLook = Look 28 TriangleShape
+    enemyPos pos pol =
+        CreateEnemy (makeStaticEnemy (Position pos) (enemyLook pol))

@@ -74,6 +74,7 @@ makeWorld "World"
     , ''AngularV
     , ''Look
     , ''Player
+    , ''EnemyTag
     , ''GlobalTimeLine
     ]
 
@@ -88,8 +89,7 @@ initialiseGame =
         velocity = Velocity 0
     in void $ do
         newEntity (Player 0, look, pos, velocity)
-        newEntity . GlobalTimeLine . makeTimeLineOnce $ 
-            [(1, CreateEnemy (Position (V2 100 100)) (Look 28 SquareShape Pink))]
+        newEntity (GlobalTimeLine mainLevel)
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game [(Position, Maybe Angle, Look)]
@@ -142,14 +142,12 @@ handleTimeLine dT = cmapM $ \(GlobalTimeLine tl) -> do
     maybe (return ()) handleEvent event
     return (GlobalTimeLine newTl)
   where
-    handleEvent (CreateEnemy pos look) = 
-        let vel = Velocity (V2 0 0) 
-        in void $ newEntity (pos, vel, look)
+    handleEvent (CreateEnemy enemy) = void $ newEntity enemy
 
 -- | Moves all kinetic objects forward
 stepKinetic :: Double -> Game ()
-stepKinetic dT = cmap $ \(Position p, Velocity v) ->
-    (Position (p + v ^* dT), Velocity v)
+stepKinetic dT = cmap $ \(pos, vel) ->
+    (move dT vel pos, vel)
 
 -- | Moves all spinning objects forward
 stepSpinning :: Double -> Game ()
