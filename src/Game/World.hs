@@ -121,7 +121,7 @@ handleInput dT input = do
             velocity = Velocity (V2 0 (-800))
             position = Position (p - V2 0 size)
             angle = Angle 0
-            angularV = AngularV 360
+            angularV = AngularV 720
         in void $ newEntity (look, position, velocity, angle, angularV)
 
 
