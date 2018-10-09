@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 {-|
 Description: Contains data and types related to pure logic
 
@@ -23,12 +23,15 @@ module Game.PureLogic
     , Polarity(..)
     , Look(..)
     , switchPolarity
+    , Visible
+    , collides
     , clamp
     , TimeLine
     , stepTimeLine
     , makeTimeLineOnce
     , makeTimeLineRepeat
-    , EnemyTag
+    , Health(..)
+    , EnemyTag(..)
     , Enemy
     , makeStaticEnemy
     , LevelEvents(..)
@@ -39,7 +42,7 @@ where
 import Data.Function ((&))
 
 import Apecs
-import Linear (V2(..), (^*))
+import Linear (V2(..), (^*), distance)
 
 
 -- | Utility type since most of our vectors will look like this
@@ -100,7 +103,7 @@ type Spinning = (Angle, AngularV)
 data Shape = SquareShape | TriangleShape
 
 -- | Represents the current polarity of some entity
-data Polarity = Pink | Blue
+data Polarity = Pink | Blue deriving (Eq)
 
 -- | Represents how some entity appears, based on shape, color, and scale
 -- The size parameter is the width of whatever shape we have
@@ -109,9 +112,20 @@ data Look = Look Double Shape Polarity
 instance Component Look where
     type Storage Look = Map Look
 
+
 switchPolarity :: Look -> Look
 switchPolarity (Look scale shape Pink) = Look scale shape Blue
 switchPolarity (Look scale shape Blue) = Look scale shape Pink
+
+
+-- | Visible items can move and spin
+type Visible = (Kinetic, Spinning, Look)
+
+
+-- | Circle based colision for simplicity
+collides :: Double -> (Position, Look) -> (Position, Look) -> Bool
+collides infl (Position pos1, (Look w1 _ _)) (Position pos2, (Look w2 _ _)) = 
+    distance pos1 pos2 - infl <= (w1 + w2)
 
 
 -- | Represents an abstract time line.
@@ -160,29 +174,35 @@ makeTimeLineRepeat :: [(Double, a)] -> TimeLine a
 makeTimeLineRepeat = timeLineRepeat . RepeatTimeLine 0 0
 
 
+newtype Health = Health Int
+
+instance Component Health where
+    type Storage Health = Map Health
+
+
 data EnemyTag = EnemyTag
 
 instance Component EnemyTag where
     type Storage EnemyTag = Map EnemyTag
 
-type Enemy = (EnemyTag, Kinetic, Spinning, Look)
+type Enemy = (EnemyTag, Health, Visible)
 
 -- | Creates an enemy that isn't moving
-makeStaticEnemy :: Position -> Look -> Enemy
-makeStaticEnemy pos look = 
+makeStaticEnemy :: Position -> Look -> Health -> Enemy
+makeStaticEnemy pos look health = 
     let kinetic = (pos, noVelocity)
         spinning = (Angle 0, AngularV 0)
-    in (EnemyTag, kinetic, spinning, look)
+    in (EnemyTag, health, (kinetic, spinning, look))
 
 -- | Modify the velocity of an enemy
 enemyWithVelocity :: Velocity -> Enemy -> Enemy
-enemyWithVelocity v (tag, (pos, _), spinning, look) = 
-    (tag, (pos, v), spinning, look)
+enemyWithVelocity v (tag, h, ((pos, _), spinning, look)) = 
+    (tag, h, ((pos, v), spinning, look))
 
 -- | Modify the angular velocity of an enemy
 enemyWithRotation :: AngularV -> Enemy -> Enemy
-enemyWithRotation omega (tag, kinetic, (angle, _), look) =
-    (tag, kinetic, (angle, omega), look)
+enemyWithRotation omega (tag, h, (kinetic, (angle, _), look)) =
+    (tag, h, (kinetic, (angle, omega), look))
 
 
 -- | Represents the events that can occur in a level
@@ -199,6 +219,8 @@ mainLevel = makeTimeLineOnce
     ]
   where
     enemyLook = Look 28 SquareShape
-    enemyPos pos pol = makeStaticEnemy (Position pos) (enemyLook pol)
+    enemyHealth = Health 15
+    enemyPos pos pol = 
+        makeStaticEnemy (Position pos) (enemyLook pol) enemyHealth
         & enemyWithRotation (AngularV 120)
         & CreateEnemy

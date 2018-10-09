@@ -49,14 +49,26 @@ getSpeed (Input _ _ slow (Direction lr ud)) = (* speed) <$>
     udSpeed DDown  = V2 0 1
 
 
-type Visible = (Look, Kinetic, Spinning)
-
 -- | Represents whether or not this entity is the player
 -- Each player has a shooting rate
 newtype Player = Player Double
 
 instance Component Player where
     type Storage Player = Unique Player
+
+-- | All the components associated with a player
+type PlayerUnit = (Player, Visible)
+
+-- | Tags certain things as bullets
+data Bullet = Bullet
+
+instance Component Bullet where
+    type Storage Bullet = Map Bullet
+
+-- | All the components associated with a player
+type BulletUnit = (Bullet, Visible)
+
+type Unit = Either BulletUnit (Either Player Enemy)
 
 -- | Represents the global timeline for the game
 newtype GlobalTimeLine = GlobalTimeLine (TimeLine LevelEvents)
@@ -71,8 +83,10 @@ makeWorld "World"
     , ''Angle
     , ''AngularV
     , ''Look
+    , ''Health
     , ''Player
     , ''EnemyTag
+    , ''Bullet
     , ''GlobalTimeLine
     ]
 
@@ -86,7 +100,7 @@ initialiseGame =
         pos = Position (V2 300 600)
         velocity = Velocity 0
     in void $ do
-        newEntity (Player 0, look, pos, velocity)
+        newEntity (Player 0, (pos, velocity, look))
         newEntity (GlobalTimeLine mainLevel)
 
 -- | Steps the game forward with a delta and player input
@@ -97,6 +111,8 @@ stepGame dT input = do
     stepKinetic dT
     stepSpinning dT
     clampPlayer
+    handleCollisions
+    deleteLowHealth
     deleteOffscreen
     getAll
 
@@ -131,7 +147,7 @@ handleInput dT input = do
             position = Position (p - V2 0 size)
             angle = Angle 0
             angularV = AngularV 720
-        in void $ newEntity (look, position, velocity, angle, angularV)
+        in void $ newEntity (Bullet, look, position, velocity, angle, angularV)
 
 -- | Steps the timeLine forward, and handles the events
 handleTimeLine :: Double -> Game ()
@@ -158,11 +174,32 @@ clampPlayer :: Game ()
 clampPlayer = cmap $ \(Player r, look@(Look size _ _), p) ->
     (Player r, look, clamp worldWidth worldHeight p)
 
+-- | Handles collisions between bullets and enemies
+handleCollisions :: Game ()
+handleCollisions = cmapM_ doCollide
+  where
+    doCollide :: (Bullet, Position, Look, Entity) 
+              -> Game ()
+    doCollide (_, pos, lookB@(Look _ _ colorB), etyB) =
+        cmapM_ $ \(EnemyTag, posE, Health h, lookE@(Look _ _ colorE), etyE) ->
+            when (collides (-14) (pos, lookB) (posE, lookE)) $ do
+                destroy etyB (Proxy @Unit)
+                let newH = if colorB == colorE then 1 else -1
+                set etyE (Health (h + newH))
+
+-- | Removes all enemies with no Health
+deleteLowHealth :: Game ()
+deleteLowHealth = cmap $ \e@(EnemyTag, Health h) ->
+    if h <= 0
+        then Left (Not @ Enemy)
+        else Right e
+    
 -- | Deletes all visible particles whose position is offscreen
 deleteOffscreen :: Game ()
 deleteOffscreen = cmap delete
   where
-    delete :: (Position, Look, Not Player) -> Either (Position, Look) (Not Visible)
+    delete :: (Position, Look, Not Player) 
+           -> Either (Position, Look) (Not Unit)
     delete (pos@(Position (V2 x y)), look@(Look size _ _), _) =
         if inBounds x worldWidth && inBounds y worldHeight
             then Left (pos, look)
