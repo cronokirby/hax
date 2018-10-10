@@ -31,8 +31,10 @@ module Game.PureLogic
     , makeTimeLineOnce
     , makeTimeLineRepeat
     , Health(..)
-    , EnemyTag(..)
-    , Enemy
+    , Bullet(..)
+    , BulletUnit
+    , Enemy(..)
+    , EnemyUnit
     , makeStaticEnemy
     , LevelEvents(..)
     , mainLevel
@@ -179,35 +181,49 @@ newtype Health = Health Int
 instance Component Health where
     type Storage Health = Map Health
 
+-- | Tags certain things as bullets
+data Bullet = Bullet
 
-data EnemyTag = EnemyTag
+instance Component Bullet where
+    type Storage Bullet = Map Bullet
 
-instance Component EnemyTag where
-    type Storage EnemyTag = Map EnemyTag
+-- | All the components attached to a bullet.
+-- This type is useful to make sure that all the components attached to
+-- bullets are correctly deleted.
+type BulletUnit = (Bullet, Visible)
 
-type Enemy = (EnemyTag, Health, Visible)
+-- | Tag a certain entity as an enemy
+data Enemy = Enemy
+
+instance Component Enemy where
+    type Storage Enemy = Map Enemy
+
+-- | All enemies should have (at least) these components
+-- We use a unit type here to be able to make sure to delete everything
+-- attached to an enemy-
+type EnemyUnit = (Enemy, Health, Visible)
 
 -- | Creates an enemy that isn't moving
-makeStaticEnemy :: Position -> Look -> Health -> Enemy
+makeStaticEnemy :: Position -> Look -> Health -> EnemyUnit
 makeStaticEnemy pos look health = 
     let kinetic = (pos, noVelocity)
         spinning = (Angle 0, AngularV 0)
-    in (EnemyTag, health, (kinetic, spinning, look))
+    in (Enemy, health, (kinetic, spinning, look))
 
 -- | Modify the velocity of an enemy
-enemyWithVelocity :: Velocity -> Enemy -> Enemy
+enemyWithVelocity :: Velocity -> EnemyUnit -> EnemyUnit
 enemyWithVelocity v (tag, h, ((pos, _), spinning, look)) = 
     (tag, h, ((pos, v), spinning, look))
 
 -- | Modify the angular velocity of an enemy
-enemyWithRotation :: AngularV -> Enemy -> Enemy
+enemyWithRotation :: AngularV -> EnemyUnit -> EnemyUnit
 enemyWithRotation omega (tag, h, (kinetic, (angle, _), look)) =
     (tag, h, (kinetic, (angle, omega), look))
 
 
 -- | Represents the events that can occur in a level
 data LevelEvents 
-    = CreateEnemy Enemy -- ^ Create a new enemy at a position
+    = CreateEnemy EnemyUnit -- ^ Create a new enemy at a position
 
 
 mainLevel :: TimeLine LevelEvents

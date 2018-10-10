@@ -59,16 +59,7 @@ instance Component Player where
 -- | All the components associated with a player
 type PlayerUnit = (Player, Visible)
 
--- | Tags certain things as bullets
-data Bullet = Bullet
-
-instance Component Bullet where
-    type Storage Bullet = Map Bullet
-
--- | All the components associated with a player
-type BulletUnit = (Bullet, Visible)
-
-type Unit = Either BulletUnit (Either Player Enemy)
+type Unit = Either BulletUnit (Either PlayerUnit EnemyUnit)
 
 -- | Represents the global timeline for the game
 newtype GlobalTimeLine = GlobalTimeLine (TimeLine LevelEvents)
@@ -85,7 +76,7 @@ makeWorld "World"
     , ''Look
     , ''Health
     , ''Player
-    , ''EnemyTag
+    , ''Enemy
     , ''Bullet
     , ''GlobalTimeLine
     ]
@@ -181,7 +172,7 @@ handleCollisions = cmapM_ doCollide
     doCollide :: (Bullet, Position, Look, Entity) 
               -> Game ()
     doCollide (_, pos, lookB@(Look _ _ colorB), etyB) =
-        cmapM_ $ \(EnemyTag, posE, Health h, lookE@(Look _ _ colorE), etyE) ->
+        cmapM_ $ \(Enemy, posE, Health h, lookE@(Look _ _ colorE), etyE) ->
             when (collides (-14) (pos, lookB) (posE, lookE)) $ do
                 destroy etyB (Proxy @Unit)
                 let newH = if colorB == colorE then 1 else -1
@@ -189,9 +180,9 @@ handleCollisions = cmapM_ doCollide
 
 -- | Removes all enemies with no Health
 deleteLowHealth :: Game ()
-deleteLowHealth = cmap $ \e@(EnemyTag, Health h) ->
+deleteLowHealth = cmap $ \e@(Enemy, Health h) ->
     if h <= 0
-        then Left (Not @ Enemy)
+        then Left (Not @ EnemyUnit)
         else Right e
     
 -- | Deletes all visible particles whose position is offscreen
