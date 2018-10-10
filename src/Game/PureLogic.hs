@@ -237,6 +237,10 @@ enemyWithRotation :: AngularV -> EnemyUnit -> EnemyUnit
 enemyWithRotation omega (tag, h, (kinetic, (angle, _), look), script) =
     (tag, h, (kinetic, (angle, omega), look), script)
 
+-- | Modify the script of an enemy
+enemyWithScript :: BulletScript -> EnemyUnit -> EnemyUnit
+enemyWithScript script (tag, h, visible, _) =
+    (tag, h, visible, script)
 
 -- | Represents the events that can occur in a level
 data LevelEvents 
@@ -245,15 +249,17 @@ data LevelEvents
 
 mainLevel :: TimeLine LevelEvents
 mainLevel = makeTimeLineOnce
-    [ (1, enemyPos (V2 100 100) Pink)
+    [ (1, CreateEnemy (Enemy, enemyHealth, ((Position (V2 100 100), Velocity (V2 0 0)), (Angle 0, AngularV 0), enemyLook Pink), someScript))
     , (1.1, enemyPos (V2 500 100) Blue)
-    , (2, enemyPos (V2 100 200) Pink)
-    , (2.1, enemyPos (V2 500 200) Blue)
     ]
   where
+    somePattern = BulletPattern 
+        [(Bullet, ((Position (V2 100 120), Velocity (V2 0 100)), (Angle 0, AngularV 0), Look 14 SquareShape Pink))]
+    someScript = BulletScript $ makeTimeLineOnce [(0.2, somePattern)]
     enemyLook = Look 28 SquareShape
     enemyHealth = Health 15
     enemyPos pos pol = 
         makeStaticEnemy (Position pos) (enemyLook pol) enemyHealth
         & enemyWithRotation (AngularV 120)
+        & enemyWithScript someScript
         & CreateEnemy

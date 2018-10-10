@@ -21,7 +21,7 @@ module Game.World
 where
 
 import Apecs
-import Control.Monad (when, void)
+import Control.Monad (forM_, void, when)
 import Data.Maybe (fromMaybe)
 import Linear (V2(..), (^*))
 
@@ -100,6 +100,7 @@ stepGame :: Double -> Input -> Game [(Position, Maybe Angle, Look)]
 stepGame dT input = do
     handleInput dT input
     handleTimeLine dT
+    handleScripts dT
     stepKinetic dT
     stepSpinning dT
     clampPlayer
@@ -139,7 +140,7 @@ handleInput dT input = do
             position = Position (p - V2 0 size)
             angle = Angle 0
             angularV = AngularV 720
-        in void $ newEntity (Bullet, look, position, velocity, angle, angularV)
+        in void $ newEntity (Bullet, ((position, velocity), (angle, angularV), look))
 
 -- | Steps the timeLine forward, and handles the events
 handleTimeLine :: Double -> Game ()
@@ -149,6 +150,15 @@ handleTimeLine dT = cmapM $ \(GlobalTimeLine tl) -> do
     return (GlobalTimeLine newTl)
   where
     handleEvent (CreateEnemy enemy) = void $ newEntity enemy
+
+-- | Steps forward all animation scripts, and creates entities for them
+handleScripts :: Double -> Game ()
+handleScripts dT = cmapM $ \(BulletScript tl) -> do
+    let (newTl, patt) = stepTimeLine tl dT
+    maybe (return ()) handlePattern patt
+    return (BulletScript newTl)
+  where
+    handlePattern (BulletPattern units) = forM_ units newEntity
 
 -- | Moves all kinetic objects forward
 stepKinetic :: Double -> Game ()
