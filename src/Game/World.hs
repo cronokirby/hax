@@ -76,8 +76,9 @@ makeWorld "World"
     , ''Look
     , ''Health
     , ''Player
-    , ''Enemy
     , ''Bullet
+    , ''BulletScript
+    , ''Enemy
     , ''GlobalTimeLine
     ]
 

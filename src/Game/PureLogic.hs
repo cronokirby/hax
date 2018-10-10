@@ -33,6 +33,8 @@ module Game.PureLogic
     , Health(..)
     , Bullet(..)
     , BulletUnit
+    , BulletPattern(..)
+    , BulletScript(..)
     , Enemy(..)
     , EnemyUnit
     , makeStaticEnemy
@@ -192,6 +194,21 @@ instance Component Bullet where
 -- bullets are correctly deleted.
 type BulletUnit = (Bullet, Visible)
 
+-- Note: the logic for bullet patterns will eventually get complicated enough
+-- to warrant its own module
+
+-- | Represents a shooting pattern for bullets
+newtype BulletPattern = BulletPattern [BulletUnit]
+
+-- | Represents a timeline of bullet patterns to shoot
+newtype BulletScript = BulletScript (TimeLine BulletPattern)
+
+instance Component BulletScript where
+    type Storage BulletScript = Map BulletScript
+
+noScript :: BulletScript
+noScript = BulletScript (makeTimeLineOnce [])
+
 -- | Tag a certain entity as an enemy
 data Enemy = Enemy
 
@@ -201,24 +218,24 @@ instance Component Enemy where
 -- | All enemies should have (at least) these components
 -- We use a unit type here to be able to make sure to delete everything
 -- attached to an enemy-
-type EnemyUnit = (Enemy, Health, Visible)
+type EnemyUnit = (Enemy, Health, Visible, BulletScript)
 
 -- | Creates an enemy that isn't moving
 makeStaticEnemy :: Position -> Look -> Health -> EnemyUnit
 makeStaticEnemy pos look health = 
     let kinetic = (pos, noVelocity)
         spinning = (Angle 0, AngularV 0)
-    in (Enemy, health, (kinetic, spinning, look))
+    in (Enemy, health, (kinetic, spinning, look), noScript)
 
 -- | Modify the velocity of an enemy
 enemyWithVelocity :: Velocity -> EnemyUnit -> EnemyUnit
-enemyWithVelocity v (tag, h, ((pos, _), spinning, look)) = 
-    (tag, h, ((pos, v), spinning, look))
+enemyWithVelocity v (tag, h, ((pos, _), spinning, look), script) = 
+    (tag, h, ((pos, v), spinning, look), script)
 
 -- | Modify the angular velocity of an enemy
 enemyWithRotation :: AngularV -> EnemyUnit -> EnemyUnit
-enemyWithRotation omega (tag, h, (kinetic, (angle, _), look)) =
-    (tag, h, (kinetic, (angle, omega), look))
+enemyWithRotation omega (tag, h, (kinetic, (angle, _), look), script) =
+    (tag, h, (kinetic, (angle, omega), look), script)
 
 
 -- | Represents the events that can occur in a level
