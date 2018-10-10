@@ -91,20 +91,16 @@ initialiseGame =
     let look = Look 28 SquareShape Pink
         pos = Position (V2 300 600)
         velocity = Velocity 0
-        somePattern = BulletPattern 
-            [(Bullet, ((Position (V2 100 120), Velocity (V2 0 100)), (Angle 0, AngularV 0), Look 14 SquareShape Pink))]
-        someScript = BulletScript $ makeTimeLineOnce [(0.2, somePattern)]
     in void $ do
         newEntity (Player 0, (pos, velocity, look))
-        --newEntity (GlobalTimeLine mainLevel)
-        newEntity someScript
+        newEntity (GlobalTimeLine mainLevel)
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game [(Position, Maybe Angle, Look)]
 stepGame dT input = do
     handleInput dT input
-    handleTimeLine dT
     handleScripts dT
+    handleTimeLine dT
     stepKinetic dT
     stepSpinning dT
     clampPlayer

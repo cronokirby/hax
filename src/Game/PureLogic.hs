@@ -250,12 +250,12 @@ data LevelEvents
 mainLevel :: TimeLine LevelEvents
 mainLevel = makeTimeLineOnce
     [ (1, CreateEnemy (Enemy, enemyHealth, ((Position (V2 100 100), Velocity (V2 0 0)), (Angle 0, AngularV 0), enemyLook Pink), someScript))
-    , (1.1, enemyPos (V2 500 100) Blue)
+    , (1.4, enemyPos (V2 500 100) Blue)
     ]
   where
     somePattern = BulletPattern 
-        [(Bullet, ((Position (V2 100 120), Velocity (V2 0 100)), (Angle 0, AngularV 0), Look 14 SquareShape Pink))]
-    someScript = BulletScript $ makeTimeLineOnce [(0.2, somePattern)]
+        [(Bullet, ((Position (V2 300 120), Velocity (V2 0 100)), (Angle 0, AngularV 0), Look 14 SquareShape Pink))]
+    someScript = BulletScript $ makeTimeLineRepeat [(1, somePattern)]
     enemyLook = Look 28 SquareShape
     enemyHealth = Health 15
     enemyPos pos pol = 
