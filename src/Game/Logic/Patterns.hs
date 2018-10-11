@@ -1,10 +1,20 @@
+{-# LANGUAGE TypeFamilies #-}
 module Game.Logic.Patterns
     ( TimeLine
     , stepTimeLine
     , makeTimeLineOnce
     , makeTimeLineRepeat
+    , Bullet(..)
+    , BulletUnit
+    , BulletPattern(..)
+    , BulletScript(..)
+    , noScript
     )
 where
+
+import Apecs (Component, Map, Storage)
+
+import Game.Logic.Geometry
 
 
 -- | Represents an abstract time line.
@@ -51,3 +61,31 @@ timeLineRepeat (RepeatTimeLine t i l)
 -- | Makes a timeline that repeats a series of events
 makeTimeLineRepeat :: [(Double, a)] -> TimeLine a
 makeTimeLineRepeat = timeLineRepeat . RepeatTimeLine 0 0
+
+
+
+-- | Tags certain things as bullets
+data Bullet = Bullet
+
+instance Component Bullet where
+    type Storage Bullet = Map Bullet
+
+-- | All the components attached to a bullet.
+-- This type is useful to make sure that all the components attached to
+-- bullets are correctly deleted.
+type BulletUnit = (Bullet, Visible)
+
+-- Note: the logic for bullet patterns will eventually get complicated enough
+-- to warrant its own module
+
+-- | Represents a shooting pattern for bullets
+newtype BulletPattern = BulletPattern [BulletUnit]
+
+-- | Represents a timeline of bullet patterns to shoot
+newtype BulletScript = BulletScript (TimeLine BulletPattern)
+
+instance Component BulletScript where
+    type Storage BulletScript = Map BulletScript
+
+noScript :: BulletScript
+noScript = BulletScript (makeTimeLineOnce [])
