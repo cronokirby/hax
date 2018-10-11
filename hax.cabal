@@ -24,7 +24,10 @@ library
       Paths_hax
     , Drawing
     , Game.Input
-    , Game.PureLogic
+    , Game.Logic
+    , Game.Logic.Geometry
+    , Game.Logic.Bullets
+    , Game.Logic.Levels
     , Game.World
     , Resources.Sprite
   hs-source-dirs:

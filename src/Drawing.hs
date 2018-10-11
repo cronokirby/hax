@@ -12,7 +12,7 @@ import Foreign.C.Types (CDouble(..), CInt)
 import qualified SDL
 import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 
-import Game.PureLogic
+import Game.Logic (Position(..), Angle(..), Look(..), Polarity(..), Shape(..))
 import Resources.Sprite
 
 

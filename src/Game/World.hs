@@ -25,7 +25,7 @@ import Control.Monad (forM_, void, when)
 import Data.Maybe (fromMaybe)
 import Linear (V2(..), (^*))
 
-import Game.PureLogic
+import Game.Logic
 import Game.Input
 
 
