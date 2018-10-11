@@ -1,4 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
+{-|
+Description: Exports data and functions to describe different levels.
+
+Describes levels by talking about enemies and the points in time
+where they spawn, as well as what behaviour they have.
+-}
 module Game.Logic.Levels
     ( Health (..)
     , Enemy(..)

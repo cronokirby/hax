@@ -1,4 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
+{-|
+Description: Talks about the shapes and kinetics of entities.
+
+This exports pure logic to talk about geometry. Other Logic modules
+build upon this one in order to describe bullets, enemies, etc.
+-}
 module Game.Logic.Geometry
     ( Vec
     , Position(..)

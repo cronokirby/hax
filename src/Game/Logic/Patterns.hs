@@ -1,4 +1,11 @@
 {-# LANGUAGE TypeFamilies #-}
+{-|
+Description: Describes timelines of events and bullets.
+
+This module contains the logic necessary to be able to describe 
+animations and more generally, timelines of events. It uses these
+concepts to then talk about patterns of bullet fire.
+-}
 module Game.Logic.Patterns
     ( TimeLine
     , stepTimeLine
