@@ -12,6 +12,7 @@ module Game.Logic.Patterns
     , makeTimeLineOnce
     , makeTimeLineRepeat
     , Path
+    , divide
     , cross
     , Bullet(..)
     , BulletUnit
@@ -23,7 +24,7 @@ module Game.Logic.Patterns
 where
 
 import Apecs (Component, Map, Storage)
-import Linear (V2(..), (*^))
+import Linear (V2(..), (*^), angle)
 
 import Game.Logic.Geometry
 
@@ -84,6 +85,22 @@ instance Semigroup Path where
 
 instance Monoid Path where
     mempty = Path []
+
+
+-- | Evenly divide objects around a circle centered at a point
+-- This function produces unit vectors distributed counter clockwise,
+-- at interval given by 2pi/spacing.
+divide :: Int -> Position -> Path
+divide spacing (Position center) = Path $
+    map (makeKinetic . angle) (angles spacing)
+  where
+    angles spacing
+        | spacing <= 0 = []
+        | otherwise    = 
+            let ang = 2 * pi / fromIntegral spacing
+            in map ((* ang) . fromIntegral) [0..spacing - 1]
+    makeKinetic dir = (Position (center + 50 * dir), Velocity (100 * dir))
+
 
 
 -- | Make a cross offset by a distance from a central point
