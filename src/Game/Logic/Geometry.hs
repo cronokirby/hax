@@ -36,7 +36,7 @@ type Vec = V2 Double
 {- Straight Movement -}
 
 -- | Represents the current position of some entity
-newtype Position = Position Vec
+newtype Position = Position Vec deriving Show
 
 instance Component Position where
     type Storage Position = Map Position
@@ -55,7 +55,7 @@ clamp width height (Position (V2 x y)) =
 -- | Represents the current velocity of an entity in pixels/s
 -- Entities with velocities should always have positions,
 -- as the velocity acts on this position to make the entity move
-newtype Velocity = Velocity Vec
+newtype Velocity = Velocity Vec deriving Show
 
 instance Component Velocity where
     type Storage Velocity = Map Velocity

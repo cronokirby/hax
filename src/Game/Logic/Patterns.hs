@@ -78,7 +78,7 @@ makeTimeLineRepeat = timeLineRepeat . RepeatTimeLine 0 0
 -- | Just the underlying movement of bullets composing a path
 -- Look and Spinning are excluded because those can be
 -- applied independent of where a bullet is going.
-newtype Path = Path [Kinetic]
+newtype Path = Path [Kinetic] deriving Show
 
 instance Semigroup Path where
     (Path xs) <> (Path ys) = Path (xs ++ ys)
@@ -90,6 +90,13 @@ instance Monoid Path where
 -- | Evenly divide objects around a circle centered at a point
 -- This function produces unit vectors distributed counter clockwise,
 -- at interval given by 2pi/spacing.
+--
+-- >>> divide 0 (Position 0)
+-- Path []
+-- >>> divide (-1) (Position 0)
+-- Path []
+-- >>> divide 1 (Position 0)
+-- Path [(Position (V2 1.0 0.0),Velocity (V2 100.0 0.0))]
 divide :: Int -> Position -> Path
 divide spacing (Position center) = Path $
     map (makeKinetic . angle) (angles spacing)
@@ -99,7 +106,7 @@ divide spacing (Position center) = Path $
         | otherwise    = 
             let ang = 2 * pi / fromIntegral spacing
             in map ((* ang) . fromIntegral) [0..spacing - 1]
-    makeKinetic dir = (Position (center + 50 * dir), Velocity (100 * dir))
+    makeKinetic dir = (Position (center + dir), Velocity (100 * dir))
 
 
 
