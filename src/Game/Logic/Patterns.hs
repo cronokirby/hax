@@ -84,7 +84,6 @@ instance Semigroup Path where
 
 instance Monoid Path where
     mempty = Path []
-    mappend = (<>)
 
 
 -- | Make a cross offset by a distance from a central point
@@ -94,6 +93,7 @@ cross offset (Position center) = Path . (<$> dirs) $ \dir ->
   where
     speed = 100
     dirs = V2 <$> [-1, 1] <*> [-1, 1]
+
 
 
 -- | Tags certain things as bullets
