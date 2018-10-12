@@ -67,18 +67,21 @@ data LevelEvents
 
 
 mainLevel :: TimeLine LevelEvents
-mainLevel = makeTimeLineOnce
-    [ (1, CreateEnemy (Enemy, enemyHealth, ((Position (V2 100 100), Velocity (V2 0 0)), (Angle 0, AngularV 0), enemyLook Pink), someScript))
-    , (1.4, enemyPos (V2 500 100) Blue)
-    ]
+mainLevel = makeTimeLineOnce 
+    . zipWith (\col f -> (1, f col)) (cycle [Pink, Blue]) $
+    (\x y -> enemyPos (V2 x y)) 
+        <$> [50,150..600] <*> [100,200..800]
   where
-    somePattern = BulletPattern 
-        [(Bullet, ((Position (V2 300 120), Velocity (V2 0 100)), (Angle 0, AngularV 0), Look 14 SquareShape Pink))]
-    someScript = BulletScript $ makeTimeLineRepeat [(1, somePattern)]
+    bulletLook = Look 14 SquareShape
+    somePath pos = cross 30 (Position pos)
+    somePattern pol = 
+        pathWithLook (Angle 0, AngularV 0) (bulletLook pol)
     enemyLook = Look 28 SquareShape
     enemyHealth = Health 15
     enemyPos pos pol = 
-        makeStaticEnemy (Position pos) (enemyLook pol) enemyHealth
-        & enemyWithRotation (AngularV 120)
-        & enemyWithScript someScript
-        & CreateEnemy
+        let someScript = BulletScript $ makeTimeLineRepeat 
+                [(0.2, somePattern pol (somePath pos))]
+        in makeStaticEnemy (Position pos) (enemyLook pol) enemyHealth
+            & enemyWithRotation (AngularV 120)
+            & enemyWithScript someScript
+            & CreateEnemy

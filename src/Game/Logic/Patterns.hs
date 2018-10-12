@@ -11,15 +11,19 @@ module Game.Logic.Patterns
     , stepTimeLine
     , makeTimeLineOnce
     , makeTimeLineRepeat
+    , Path
+    , cross
     , Bullet(..)
     , BulletUnit
     , BulletPattern(..)
+    , pathWithLook
     , BulletScript(..)
     , noScript
     )
 where
 
 import Apecs (Component, Map, Storage)
+import Linear (V2(..), (*^))
 
 import Game.Logic.Geometry
 
@@ -70,6 +74,27 @@ makeTimeLineRepeat :: [(Double, a)] -> TimeLine a
 makeTimeLineRepeat = timeLineRepeat . RepeatTimeLine 0 0
 
 
+-- | Just the underlying movement of bullets composing a path
+-- Look and Spinning are excluded because those can be
+-- applied independent of where a bullet is going.
+newtype Path = Path [Kinetic]
+
+instance Semigroup Path where
+    (Path xs) <> (Path ys) = Path (xs ++ ys)
+
+instance Monoid Path where
+    mempty = Path []
+    mappend = (<>)
+
+
+-- | Make a cross offset by a distance from a central point
+cross :: Double -> Position -> Path
+cross offset (Position center) = Path . (<$> dirs) $ \dir ->
+    (Position (center + offset *^ dir), Velocity (speed * dir))
+  where
+    speed = 100
+    dirs = V2 <$> [-1, 1] <*> [-1, 1]
+
 
 -- | Tags certain things as bullets
 data Bullet = Bullet
@@ -88,11 +113,18 @@ type BulletUnit = (Bullet, Visible)
 -- | Represents a shooting pattern for bullets
 newtype BulletPattern = BulletPattern [BulletUnit]
 
+-- | Adds a constant look to a pattern
+pathWithLook :: Spinning -> Look -> Path -> BulletPattern
+pathWithLook spinning look (Path xs) = 
+    BulletPattern $ map (\kin -> (Bullet, (kin, spinning, look))) xs
+
+
 -- | Represents a timeline of bullet patterns to shoot
 newtype BulletScript = BulletScript (TimeLine BulletPattern)
 
 instance Component BulletScript where
     type Storage BulletScript = Map BulletScript
 
+-- | A bullet script where nothing happens
 noScript :: BulletScript
 noScript = BulletScript (makeTimeLineOnce [])
