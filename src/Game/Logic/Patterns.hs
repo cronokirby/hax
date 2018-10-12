@@ -131,9 +131,6 @@ instance Component Bullet where
 -- bullets are correctly deleted.
 type BulletUnit = (Bullet, Visible)
 
--- Note: the logic for bullet patterns will eventually get complicated enough
--- to warrant its own module
-
 -- | Represents a shooting pattern for bullets
 newtype BulletPattern = BulletPattern [BulletUnit]
 
