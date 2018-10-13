@@ -16,6 +16,7 @@ main = do
 
 spec = do
     geometrySpec
+    patternSpec
 
 
 geometrySpec = do
@@ -42,7 +43,7 @@ geometrySpec = do
             move 0 (velocity 10 10) (position 1 1) `shouldBe` position 1 1
             move 0 (velocity 10 10) (position 0 0) `shouldBe` position 0 0
     describe "Geometry.collides" $ do
-        it "returns true for self collision" $ do
+        it "returns true for self collision" $
             collides 0 (position 0 0, look) (position 0 0, look) `shouldBe` True
         it "handles basic collisions" $ do
             collides 0 (position 0 20, look) (position 0 0, look) `shouldBe` True
@@ -50,3 +51,16 @@ geometrySpec = do
   where
     look = Look 10 SquareShape Blue
     cl10 = clamp 10 10
+
+
+patternSpec = do
+    describe "Patterns.scaleTime" $ do
+        it "does nothing for empty Paths" $ do
+            scaleTime 0 mempty `shouldBe` mempty
+            scaleTime 1 mempty `shouldBe` mempty
+        it "does nothing with no time" $
+            let p = divide 4 (position 1 1)
+            in scaleTime 0 p `shouldBe` p
+        it "is reversible" $
+            let p = divide 4 (position 1 1)
+            in (scaleTime (-1) . scaleTime 1) p `shouldBe` p

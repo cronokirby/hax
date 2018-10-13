@@ -13,6 +13,7 @@ module Game.Logic.Patterns
     , makeTimeLineRepeat
     , Path
     , divide
+    , scaleTime
     , cross
     , Bullet(..)
     , BulletUnit
@@ -113,7 +114,7 @@ makeTimeLineRepeat = timeLineRepeat . RepeatTimeLine 0 0
 Look and Spinning are excluded because those can be
 applied independent of where a bullet is going.
 -}
-newtype Path = Path [Kinetic] deriving Show
+newtype Path = Path [Kinetic] deriving (Eq, Show)
 
 instance Semigroup Path where
     (Path xs) <> (Path ys) = Path (xs ++ ys)
@@ -145,6 +146,16 @@ divide spacing (Position center) = Path $
             in map ((* ang) . fromIntegral) [0..spacing - 1]
     makeKinetic dir = (Position (center + dir), Velocity (100 * dir))
 
+
+{- | Advances every position by dT * velocity.
+
+This is useful for scaling out a pattern.
+
+>>> scaleTime 1 (Path [(position 0 0, velocity 1 0)])
+Path [(Position (V2 1.0 0.0),Velocity (V2 1.0 0.0))]
+-}
+scaleTime :: Double -> Path -> Path
+scaleTime dT (Path xs) = Path $ map (\(p, v) -> (move dT v p, v)) xs
 
 
 -- | Make a cross offset by a distance from a central point.
