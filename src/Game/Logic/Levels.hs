@@ -22,6 +22,8 @@ import Game.Logic.Geometry
 import Game.Logic.Patterns
 
 
+{- Enemies and their components -}
+
 newtype Health = Health Int
 
 instance Component Health where
@@ -33,9 +35,11 @@ data Enemy = Enemy
 instance Component Enemy where
     type Storage Enemy = Map Enemy
 
--- | All enemies should have (at least) these components
--- We use a unit type here to be able to make sure to delete everything
--- attached to an enemy-
+{- | All enemies should have (at least) these components.
+
+We use a unit type here to be able to make sure to delete everything
+attached to an enemy.
+-}
 type EnemyUnit = (Enemy, Health, Visible, BulletScript)
 
 -- | Creates an enemy that isn't moving

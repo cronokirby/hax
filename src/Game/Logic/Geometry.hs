@@ -29,11 +29,11 @@ import Apecs (Component, Map, Storage)
 import Linear (V2(..), (^*), distance)
 
 
+{- Straight Movement -}
+
 -- | Utility type since most of our vectors will look like this
 type Vec = V2 Double
 
-
-{- Straight Movement -}
 
 -- | Represents the current position of some entity
 newtype Position = Position Vec deriving Show
@@ -52,9 +52,11 @@ clamp width height (Position (V2 x y)) =
       | otherwise = val
 
 
--- | Represents the current velocity of an entity in pixels/s
--- Entities with velocities should always have positions,
--- as the velocity acts on this position to make the entity move
+{- | Represents the current velocity of an entity in pixels/s.
+
+Entities with velocities should always have positions,
+as the velocity acts on this position to make the entity move.
+-}
 newtype Velocity = Velocity Vec deriving Show
 
 instance Component Velocity where
@@ -65,7 +67,7 @@ noVelocity :: Velocity
 noVelocity = Velocity (V2 0 0)
 
 
--- | Given a fraction of a second, and a velocity, advance a position
+-- | Given a fraction of a second, and a velocity, advance a position.
 move :: Double -> Velocity -> Position -> Position
 move dT (Velocity v) (Position p) = Position (p + v ^* dT)
 
@@ -75,14 +77,14 @@ type Kinetic = (Position, Velocity)
 
 {- Angular movement -}
 
--- | Represents the current angle of rotation in degrees
+-- | Represents the current angle of rotation in degrees.
 newtype Angle = Angle Double
 
 instance Component Angle where
     type Storage Angle = Map Angle
 
 
--- | Represents the current change of angle, in degrees per second
+-- | Represents the current change of angle, in degrees per second.
 newtype AngularV = AngularV Double
 
 instance Component AngularV where
@@ -94,16 +96,18 @@ type Spinning = (Angle, AngularV)
 
 {- How things look -}
 
--- | Represents the current shape of some entity
+-- | Represents the current shape of some entity.
 data Shape = SquareShape | TriangleShape
 
 
--- | Represents the current polarity of some entity
+-- | Represents the current polarity of some entity.
 data Polarity = Pink | Blue deriving (Eq)
 
 
--- | Represents how some entity appears, based on shape, color, and scale
--- The size parameter is the width of whatever shape we have
+{- | Represents how some entity appears, based on shape, color, and scale.
+
+The size parameter is the width of whatever shape we have
+-}
 data Look = Look Double Shape Polarity
 
 instance Component Look where
@@ -118,7 +122,11 @@ switchPolarity (Look scale shape Blue) = Look scale shape Pink
 type Visible = (Kinetic, Spinning, Look)
 
 
--- | Circle based colision for simplicity
+{- | Detects a collision between 2 entities with positions and looks.
+
+Detects collision as if both entities were circles, which is sufficient
+given the polygonal shape of our sprites.
+-}
 collides :: Double -> (Position, Look) -> (Position, Look) -> Bool
 collides infl (Position pos1, (Look w1 _ _)) (Position pos2, (Look w2 _ _)) = 
     distance pos1 pos2 - infl <= (w1 + w2)

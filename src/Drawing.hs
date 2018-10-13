@@ -55,3 +55,4 @@ drawSprites toDraw sprites renderer = do
     forM toDraw $ \(pos, angle, look) ->
         renderLook pos (fromMaybe (Angle 0) angle) look sprites renderer
     SDL.present renderer
+    

@@ -29,14 +29,20 @@ import Linear (V2(..), (*^), angle)
 import Game.Logic.Geometry
 
 
--- | Represents an abstract time line.
--- This is usually constructed via the other timeline types
+{- TimeLines -}
+
+{- | Represents an abstract time line.
+
+This is usually constructed via the other timeline types.
+-}
 newtype TimeLine a = TimeLine { stepTimeLine :: Double -> (TimeLine a, Maybe a) } 
 
 
--- | Represents a time line of actions that ocurr once.
--- When converted to a timeline, no actions will fire after
--- the end of the list of events is reached.
+{- | Represents a time line of actions that ocurr once.
+
+When converted to a timeline, no actions will fire after
+the end of the list of events is reached.
+-}
 data OneTimeLine a = OneTimeLine Double [(Double, a)]
 
 timeLineOnce :: OneTimeLine a -> TimeLine a
@@ -50,12 +56,12 @@ timeLineOnce (OneTimeLine t allEvents@((trigger, event):restEvents)) =
             then (nextWith restEvents, Just event)
             else (nextWith allEvents, Nothing)
 
--- | Make a timeline that runs a list of events a single time
+-- | Make a timeline that runs a list of events a single time.
 makeTimeLineOnce :: [(Double, a)] -> TimeLine a
 makeTimeLineOnce = timeLineOnce . OneTimeLine 0
 
 
--- | Represents a time line of actions that repeat
+-- | Represents a time line of actions that repeat.
 data RepeatTimeLine a = RepeatTimeLine Double Int [(Double, a)]
 
 timeLineRepeat :: RepeatTimeLine a -> TimeLine a
@@ -70,14 +76,18 @@ timeLineRepeat (RepeatTimeLine t i l)
             then (nextWith (i + 1), Just event)
             else (nextWith i, Nothing)
 
--- | Makes a timeline that repeats a series of events
+-- | Makes a timeline that repeats a series of events.
 makeTimeLineRepeat :: [(Double, a)] -> TimeLine a
 makeTimeLineRepeat = timeLineRepeat . RepeatTimeLine 0 0
 
 
--- | Just the underlying movement of bullets composing a path
--- Look and Spinning are excluded because those can be
--- applied independent of where a bullet is going.
+{- Paths -}
+
+{- | Just the underlying movement of bullets composing a path.
+
+Look and Spinning are excluded because those can be
+applied independent of where a bullet is going.
+-}
 newtype Path = Path [Kinetic] deriving Show
 
 instance Semigroup Path where
@@ -87,16 +97,18 @@ instance Monoid Path where
     mempty = Path []
 
 
--- | Evenly divide objects around a circle centered at a point
--- This function produces unit vectors distributed counter clockwise,
--- at interval given by 2pi/spacing.
---
--- >>> divide 0 (Position 0)
--- Path []
--- >>> divide (-1) (Position 0)
--- Path []
--- >>> divide 1 (Position 0)
--- Path [(Position (V2 1.0 0.0),Velocity (V2 100.0 0.0))]
+{- | Evenly divide objects around a circle centered at a point.
+
+This function produces unit vectors distributed counter clockwise,
+at interval given by 2pi/spacing.
+
+>>> divide 0 (Position 0)
+Path []
+>>> divide (-1) (Position 0)
+Path []
+>>> divide 1 (Position 0)
+Path [(Position (V2 1.0 0.0),Velocity (V2 100.0 0.0))]
+-}
 divide :: Int -> Position -> Path
 divide spacing (Position center) = Path $
     map (makeKinetic . angle) (angles spacing)
@@ -110,7 +122,7 @@ divide spacing (Position center) = Path $
 
 
 
--- | Make a cross offset by a distance from a central point
+-- | Make a cross offset by a distance from a central point.
 cross :: Double -> Position -> Path
 cross offset (Position center) = Path . (<$> dirs) $ \dir ->
     (Position (center + offset *^ dir), Velocity (speed * dir))
@@ -119,33 +131,36 @@ cross offset (Position center) = Path . (<$> dirs) $ \dir ->
     dirs = V2 <$> [-1, 1] <*> [-1, 1]
 
 
+{- Bullets and BulletScripts-}
 
--- | Tags certain things as bullets
+-- | Tags certain things as bullets.
 data Bullet = Bullet
 
 instance Component Bullet where
     type Storage Bullet = Map Bullet
 
--- | All the components attached to a bullet.
--- This type is useful to make sure that all the components attached to
--- bullets are correctly deleted.
+{- | All the components attached to a bullet.
+
+This type is useful to make sure that all the components attached to
+bullets are correctly deleted.
+-}
 type BulletUnit = (Bullet, Visible)
 
--- | Represents a shooting pattern for bullets
+-- | Represents a shooting pattern for bullets.
 newtype BulletPattern = BulletPattern [BulletUnit]
 
--- | Adds a constant look to a pattern
+-- | Adds a constant look to a pattern.
 pathWithLook :: Spinning -> Look -> Path -> BulletPattern
 pathWithLook spinning look (Path xs) = 
     BulletPattern $ map (\kin -> (Bullet, (kin, spinning, look))) xs
 
 
--- | Represents a timeline of bullet patterns to shoot
+-- | Represents a timeline of bullet patterns to shoot.
 newtype BulletScript = BulletScript (TimeLine BulletPattern)
 
 instance Component BulletScript where
     type Storage BulletScript = Map BulletScript
 
--- | A bullet script where nothing happens
+-- | A bullet script where nothing happens.
 noScript :: BulletScript
 noScript = BulletScript (makeTimeLineOnce [])
