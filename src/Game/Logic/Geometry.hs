@@ -78,14 +78,14 @@ type Kinetic = (Position, Velocity)
 {- Angular movement -}
 
 -- | Represents the current angle of rotation in degrees.
-newtype Angle = Angle Double
+newtype Angle = Angle Double deriving (Show)
 
 instance Component Angle where
     type Storage Angle = Map Angle
 
 
 -- | Represents the current change of angle, in degrees per second.
-newtype AngularV = AngularV Double
+newtype AngularV = AngularV Double deriving (Show)
 
 instance Component AngularV where
     type Storage AngularV = Map AngularV
@@ -97,18 +97,18 @@ type Spinning = (Angle, AngularV)
 {- How things look -}
 
 -- | Represents the current shape of some entity.
-data Shape = SquareShape | TriangleShape
+data Shape = SquareShape | TriangleShape deriving (Show)
 
 
 -- | Represents the current polarity of some entity.
-data Polarity = Pink | Blue deriving (Eq)
+data Polarity = Pink | Blue deriving (Eq, Show)
 
 
 {- | Represents how some entity appears, based on shape, color, and scale.
 
 The size parameter is the width of whatever shape we have
 -}
-data Look = Look Double Shape Polarity
+data Look = Look Double Shape Polarity deriving (Show)
 
 instance Component Look where
     type Storage Look = Map Look

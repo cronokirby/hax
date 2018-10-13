@@ -36,9 +36,9 @@ instance Component Enemy where
     type Storage Enemy = Map Enemy
 
 {- | All enemies should have (at least) these components.
-
-We use a unit type here to be able to make sure to delete everything
-attached to an enemy.
+. It
+. Itit type here to be able to make sure to delete everything
+. It an enemy.
 -}
 type EnemyUnit = (Enemy, Health, Visible, BulletScript)
 

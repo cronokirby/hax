@@ -56,7 +56,15 @@ timeLineOnce (OneTimeLine t allEvents@((trigger, event):restEvents)) =
             then (nextWith restEvents, Just event)
             else (nextWith allEvents, Nothing)
 
--- | Make a timeline that runs a list of events a single time.
+{- | Make a timeline that runs a list of events a single time.
+
+>>> tl = makeTimeLineOnce [(1.0, "Hello")]
+>>> (newTl, event) = stepTimeLine tl 2.0
+>>> event
+Just "Hello"
+>>> snd (stepTimeLine newTl 2.0)
+Nothing
+-}
 makeTimeLineOnce :: [(Double, a)] -> TimeLine a
 makeTimeLineOnce = timeLineOnce . OneTimeLine 0
 
@@ -76,7 +84,24 @@ timeLineRepeat (RepeatTimeLine t i l)
             then (nextWith (i + 1), Just event)
             else (nextWith i, Nothing)
 
--- | Makes a timeline that repeats a series of events.
+{- | Makes a timeline that repeats a series of events.
+
+Note that with the way this timeline works, once the end of the list
+of events is reached, it takes one more step to reset the timeline.
+This should have no effect on things, since timeSteps are so small.
+This would lead to noticeable choppiness if timeSteps were on the order
+of a second or so, but at that point, all the graphics would go to hell.
+
+>>> tl = makeTimeLineRepeat [(1.0, "Hello")]
+>>> (tl2, event) = stepTimeLine tl 2.0
+>>> event
+Just "Hello"
+>>> (tl3, event) = (stepTimeLine tl2 2.0)
+>>> event
+Nothing
+>>> snd (stepTimeLine tl3 2.0)
+Just "Hello"
+-}
 makeTimeLineRepeat :: [(Double, a)] -> TimeLine a
 makeTimeLineRepeat = timeLineRepeat . RepeatTimeLine 0 0
 
@@ -134,7 +159,7 @@ cross offset (Position center) = Path . (<$> dirs) $ \dir ->
 {- Bullets and BulletScripts-}
 
 -- | Tags certain things as bullets.
-data Bullet = Bullet
+data Bullet = Bullet deriving (Show)
 
 instance Component Bullet where
     type Storage Bullet = Map Bullet
@@ -147,7 +172,7 @@ bullets are correctly deleted.
 type BulletUnit = (Bullet, Visible)
 
 -- | Represents a shooting pattern for bullets.
-newtype BulletPattern = BulletPattern [BulletUnit]
+newtype BulletPattern = BulletPattern [BulletUnit] deriving (Show)
 
 -- | Adds a constant look to a pattern.
 pathWithLook :: Spinning -> Look -> Path -> BulletPattern
@@ -161,6 +186,11 @@ newtype BulletScript = BulletScript (TimeLine BulletPattern)
 instance Component BulletScript where
     type Storage BulletScript = Map BulletScript
 
--- | A bullet script where nothing happens.
+{- | A bullet script where nothing happens.
+
+>>> (BulletScript tl) = noScript
+>>> snd (stepTimeLine tl 1.0)
+Nothing
+-}
 noScript :: BulletScript
 noScript = BulletScript (makeTimeLineOnce [])
