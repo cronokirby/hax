@@ -20,11 +20,11 @@ source-repository head
 library
   exposed-modules:
       Hax
+    , Game.Logic
   other-modules:
       Paths_hax
     , Drawing
     , Game.Input
-    , Game.Logic
     , Game.Logic.Geometry
     , Game.Logic.Patterns
     , Game.Logic.Levels
@@ -53,14 +53,15 @@ executable hax-exe
 
 test-suite hax-test
   type: exitcode-stdio-1.0
-  main-is: Doctests.hs
+  main-is: Tests.hs
   other-modules:
       Paths_hax
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base    >= 4.7 && < 5
-    , doctest >= 0.2 && < 0.3
+      base    >= 4.7  && < 5
+    , doctest >= 0.16 && < 0.17
+    , hspec   >= 2.5  && < 2.6
     , hax
   default-language: Haskell2010

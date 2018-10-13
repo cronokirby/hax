@@ -49,8 +49,12 @@ getSpeed (Input _ _ slow (Direction lr ud)) = (* speed) <$>
     udSpeed DDown  = V2 0 1
 
 
--- | Represents whether or not this entity is the player
--- Each player has a shooting rate
+{- | Represents whether or not this entity is the player.
+
+The player has a double indicating rate of fire. This way of controlling
+rate of fire is unique to the player, since enemies have more complicated
+scripts, but the player is controlled uniquely by controller input.
+-}
 newtype Player = Player Double
 
 instance Component Player where
@@ -124,8 +128,9 @@ handleInput dT input = do
                 then switchPolarity l
                 else l
         in (Player (reload - dT), Velocity speed, newLook)
-    -- Creates a new bullet when the player can shoot, and resets
-    -- there reload value if shot.
+    {- Creates a new bullet when the player can shoot, and resets
+    their reload value if shot.
+    -}
     shoot :: (Player, Look, Position) -> Game (Player, Look, Position)
     shoot all@(Player r, look, p) = if r <= 0
         then do
@@ -135,7 +140,7 @@ handleInput dT input = do
     -- Creates a new bullet with the same color as Look above position
     makeBullet :: Look -> Position -> Game ()
     makeBullet (Look size _ polarity) (Position p) =
-        let look = Look 12 SquareShape polarity
+        let look = Look 14 SquareShape polarity
             velocity = Velocity (V2 0 (-800))
             position = Position (p - V2 0 size)
             angle = Angle 0
@@ -169,7 +174,6 @@ stepKinetic dT = cmap $ \(pos, vel) ->
 stepSpinning :: Double -> Game ()
 stepSpinning dT = cmap $ \(Angle a, AngularV v) ->
     (Angle (a + v * dT), AngularV v)
-
 
 -- | Keeps player within bounds
 clampPlayer :: Game ()

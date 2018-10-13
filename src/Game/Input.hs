@@ -20,9 +20,11 @@ import Data.List (uncons)
 import qualified SDL
 
 
--- | Describes an input that toggles some kind of actions
--- We want this to behave such that a held button doesn't trigger
--- firing more than once.
+{- | Describes an input that toggles some kind of actions
+
+We want this to behave such that a held button doesn't trigger
+firing more than once.
+-}
 data ToggleInput = ToggleInput !Bool !Bool deriving Show
 
 -- | Advanced the state of a held input based on the current frame
@@ -80,9 +82,11 @@ initialInput = Input
     (HeldInput False)
     (Direction Nothing Nothing)
 
--- | Gathers input based on what scancodes are currently activated
--- Requires the previous input state to be able to advance the state
--- of input gathering.
+{- | Gathers input based on what scancodes are currently activated.
+
+Requires the previous input state to be able to advance the state
+of input gathering.
+-}
 gatherInput :: (SDL.Scancode -> Bool) -> Input -> Input
 gatherInput toggle (Input _ oldSwitch _ _) =
     Input shooting switch fast direction

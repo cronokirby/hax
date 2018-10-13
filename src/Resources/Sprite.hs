@@ -23,12 +23,15 @@ import qualified SDL
 import SDL (Rectangle(..), Point(..), V2(..))
 
 
--- | Contains the necessary information to locate a Sprite's sheet
--- CInt is mainly used for conveniance of interaction with SDL
+{- | Contains the necessary information to locate a Sprite's sheet
+CInt is mainly used for conveniance of interaction with SDL
+-}
 data SpriteLocation = SpriteLocation !CInt !CInt !FilePath
 
--- | The locations for sprites used in this project
--- This should always be kept in sync with the /resources folder
+{- | The locations for sprites used in this project.
+
+This should always be kept in sync with the /resources folder.
+-}
 spriteLocations :: [SpriteLocation]
 spriteLocations = map makeLocation
     [ (60, 60, "square.bmp")
@@ -39,8 +42,10 @@ spriteLocations = map makeLocation
     makeLocation (w, h, path) = SpriteLocation w h (spritePath ++ path)
 
 
--- | The global index of all possible sprites and animations
--- The tag indicates the spritesheet, and the second the element
+{- | The global index of all possible sprites and animations.
+
+The tag indicates the spritesheet, and the second the element.
+-}
 data SpriteIndex
     = SpSquarePink | SpSquareBlue
     | SpTrianglePink | SpTriangleBlue
@@ -56,8 +61,10 @@ getRaw SpTrianglePink = RawIndex 1 0
 getRaw SpTriangleBlue = RawIndex 1 1
 
 
--- | Used to contain the data for a Sprite and all its animations
--- Each sprite in the sheet must have the same size in Width Height
+{- | Used to contain the data for a Sprite and all its animations.
+
+Each sprite in the sheet must have the same size in Width Height.
+-}
 data SpriteSheet = SpriteSheet !CInt !CInt !SDL.Texture
 
 sheetTexture :: SpriteSheet -> SDL.Texture
@@ -72,8 +79,10 @@ getFrame (SpriteSheet w h texture) index = Just $
 -- | Contains all the sprite data for the game
 newtype SpriteData = SpriteData [SpriteSheet]
 
--- | Gets the sprite sheet and frame corresponding to a given index
--- This allows us to keep SpriteData's representation independent
+{- | Gets the sprite sheet and frame corresponding to a given index
+
+This allows us to keep SpriteData's representation independent
+-}
 getSprite :: SpriteData -> SpriteIndex -> (SpriteSheet, Maybe (Rectangle CInt))
 getSprite (SpriteData sheets) index =
     let (RawIndex sheetPos frame) = getRaw index
