@@ -8,8 +8,10 @@ build upon this one in order to describe bullets, enemies, etc.
 module Game.Logic.Geometry
     ( Vec
     , Position(..)
+    , position
     , clamp
     , Velocity(..)
+    , velocity
     , noVelocity
     , move
     , Kinetic
@@ -36,10 +38,14 @@ type Vec = V2 Double
 
 
 -- | Represents the current position of some entity
-newtype Position = Position Vec deriving Show
+newtype Position = Position Vec deriving (Eq, Show)
 
 instance Component Position where
     type Storage Position = Map Position
+
+-- | Creates a position given an x and a y component.
+position :: Double -> Double -> Position
+position x y = Position (V2 x y)
 
 -- | Clamps x between 0 and width, and y between 0 and height
 clamp :: Double -> Double -> Position -> Position
@@ -57,10 +63,14 @@ clamp width height (Position (V2 x y)) =
 Entities with velocities should always have positions,
 as the velocity acts on this position to make the entity move.
 -}
-newtype Velocity = Velocity Vec deriving Show
+newtype Velocity = Velocity Vec deriving (Eq, Show)
 
 instance Component Velocity where
     type Storage Velocity = Map Velocity
+
+-- | Creates a velocity given an x and a y component.
+velocity :: Double -> Double -> Velocity
+velocity x y = Velocity (V2 x y)
 
 -- | Null velocity
 noVelocity :: Velocity
