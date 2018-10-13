@@ -53,7 +53,7 @@ geometrySpec = do
     cl10 = clamp 10 10
 
 
-patternSpec = do
+patternSpec =
     describe "Patterns.scaleTime" $ do
         it "does nothing for empty Paths" $ do
             scaleTime 0 mempty `shouldBe` mempty
