@@ -126,14 +126,14 @@ instance Monoid Path where
 {- | Evenly divide objects around a circle centered at a point.
 
 This function produces unit vectors distributed counter clockwise,
-at interval given by 2pi/spacing.
+at interval given by 2pi/spacing, with unit velocity
 
 >>> divide 0 (Position 0)
 Path []
 >>> divide (-1) (Position 0)
 Path []
 >>> divide 1 (Position 0)
-Path [(Position (V2 1.0 0.0),Velocity (V2 100.0 0.0))]
+Path [(Position (V2 1.0 0.0),Velocity (V2 1.0 0.0))]
 -}
 divide :: Int -> Position -> Path
 divide spacing (Position center) = Path $
@@ -144,7 +144,7 @@ divide spacing (Position center) = Path $
         | otherwise    = 
             let ang = 2 * pi / fromIntegral spacing
             in map ((* ang) . fromIntegral) [0..spacing - 1]
-    makeKinetic dir = (Position (center + dir), Velocity (100 * dir))
+    makeKinetic dir = (Position (center + dir), Velocity dir)
 
 
 {- | Advances every position by dT * velocity.

@@ -62,5 +62,5 @@ patternSpec = do
             let p = divide 4 (position 1 1)
             in scaleTime 0 p `shouldBe` p
         it "is reversible" $
-            let p = divide 4 (position 1 1)
+            let p = divide 1 (position 1 1)
             in (scaleTime (-1) . scaleTime 1) p `shouldBe` p
