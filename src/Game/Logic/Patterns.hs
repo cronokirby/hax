@@ -25,6 +25,7 @@ module Game.Logic.Patterns
 where
 
 import Apecs (Component, Map, Storage)
+import Data.Function((&))
 import Linear (V2(..), (*^), angle)
 
 import Game.Logic.Geometry
@@ -160,11 +161,8 @@ scaleTime dT (Path xs) = Path $ map (\(p, v) -> (move dT v p, v)) xs
 
 -- | Make a cross offset by a distance from a central point.
 cross :: Double -> Position -> Path
-cross offset (Position center) = Path . (<$> dirs) $ \dir ->
-    (Position (center + offset *^ dir), Velocity (speed * dir))
-  where
-    speed = 100
-    dirs = V2 <$> [-1, 1] <*> [-1, 1]
+cross offset pos = divide 4 pos
+    & scaleTime offset
 
 
 {- Bullets and BulletScripts-}

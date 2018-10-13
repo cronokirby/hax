@@ -76,7 +76,7 @@ mainLevel = makeTimeLineOnce
     ]
   where
     bulletLook = Look 14 SquareShape
-    somePath pos = divide 8 (Position pos)
+    somePath pos = cross 50 (Position pos)
     somePattern pol = 
         pathWithLook (Angle 0, AngularV 0) (bulletLook pol)
     enemyLook = Look 28 SquareShape
