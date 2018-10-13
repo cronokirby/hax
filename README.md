@@ -1,6 +1,11 @@
 # Hax
 Bullet hell game in haskell.
 
+
+## Cool Screenshots!
+![Bullets everywhere!](https://media.discordapp.net/attachments/251783968515555330/500567570533974026/unknown.png?width=423&height=590)
+
+
 ## Building
 I've used `stack` for this project, but building with just `cabal` should
 be similar.
@@ -43,6 +48,3 @@ After a successful `stack build`, all you need is:
 ```
 stack exec hax-exe
 ```
-
-## Cool Screenshots!
-![Bullets everywhere!](https://media.discordapp.net/attachments/251783968515555330/500567570533974026/unknown.png?width=423&height=590)
