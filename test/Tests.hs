@@ -34,5 +34,19 @@ geometrySpec = do
             cl10 (position 100 100) `shouldBe` position 10 10
             cl10 (position 100 0)   `shouldBe` position 10 0
             cl10 (position 0 100)   `shouldBe` position 0 10
+    describe "Geometry.move" $ do
+        it "does nothing with no velocity" $ do
+            move 1 noVelocity (position 1 1) `shouldBe` position 1 1
+            move 1 noVelocity (position 0 0) `shouldBe` position 0 0
+        it "does nothing with no time" $ do
+            move 0 (velocity 10 10) (position 1 1) `shouldBe` position 1 1
+            move 0 (velocity 10 10) (position 0 0) `shouldBe` position 0 0
+    describe "Geometry.collides" $ do
+        it "returns true for self collision" $ do
+            collides 0 (position 0 0, look) (position 0 0, look) `shouldBe` True
+        it "handles basic collisions" $ do
+            collides 0 (position 0 20, look) (position 0 0, look) `shouldBe` True
+            collides 0 (position 0 21, look) (position 0 0, look) `shouldBe` False
   where
+    look = Look 10 SquareShape Blue
     cl10 = clamp 10 10

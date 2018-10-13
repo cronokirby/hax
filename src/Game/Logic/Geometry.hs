@@ -43,7 +43,11 @@ newtype Position = Position Vec deriving (Eq, Show)
 instance Component Position where
     type Storage Position = Map Position
 
--- | Creates a position given an x and a y component.
+{- | Creates a position given an x and a y component.
+
+>>> position 0.0 0.0
+Position (V2 0.0 0.0)
+-}
 position :: Double -> Double -> Position
 position x y = Position (V2 x y)
 
@@ -68,7 +72,11 @@ newtype Velocity = Velocity Vec deriving (Eq, Show)
 instance Component Velocity where
     type Storage Velocity = Map Velocity
 
--- | Creates a velocity given an x and a y component.
+{- | Creates a velocity given an x and a y component.
+
+>>> velocity 1.0 1.0
+Velocity (V2 1.0 1.0)
+-}
 velocity :: Double -> Double -> Velocity
 velocity x y = Velocity (V2 x y)
 
@@ -123,6 +131,14 @@ data Look = Look Double Shape Polarity deriving (Show)
 instance Component Look where
     type Storage Look = Map Look
 
+{- | Switches the polarity of a look, but preserves every other component.
+
+This is useful because we often want to swap what color something is,
+without perturbing anything else.
+
+>>> switchPolarity (Look 1.0 SquareShape Pink)
+Look 1.0 SquareShape Blue
+-}
 switchPolarity :: Look -> Look
 switchPolarity (Look scale shape Pink) = Look scale shape Blue
 switchPolarity (Look scale shape Blue) = Look scale shape Pink
