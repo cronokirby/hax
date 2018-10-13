@@ -14,7 +14,7 @@ module Game.Logic.Patterns
     , Path
     , divide
     , scaleTime
-    , cross
+    , scaleVelocity
     , Bullet(..)
     , BulletUnit
     , BulletPattern(..)
@@ -159,10 +159,18 @@ scaleTime :: Double -> Path -> Path
 scaleTime dT (Path xs) = Path $ map (\(p, v) -> (move dT v p, v)) xs
 
 
--- | Make a cross offset by a distance from a central point.
-cross :: Double -> Position -> Path
-cross offset pos = divide 4 pos
-    & scaleTime offset
+{- | Scales every speed in a path by a factor.
+
+By default, most combinators specifying the shape of some kind of Path
+use a unit velocity, which isn't very fast at all. This allows speeding
+up those velocities but preserving the direction of the velocities.
+
+>>> scaleVelocity 32 (divide 1 (position 0 0))
+Path [(Position (V2 1.0 0.0),Velocity (V2 32.0 0.0))]
+-}
+scaleVelocity :: Double -> Path -> Path
+scaleVelocity dT (Path xs) = Path . (<$> xs) $ 
+    \(p, Velocity v) -> (p, Velocity (dT *^ v))
 
 
 {- Bullets and BulletScripts-}
