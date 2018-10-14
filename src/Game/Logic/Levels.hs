@@ -72,18 +72,15 @@ data LevelEvents
 
 mainLevel :: TimeLine LevelEvents
 mainLevel = makeTimeLineOnce 
-    [ (1, enemyPos (V2 500 200) Blue)
-    , (1, enemyPos (V2 300 200) Blue)
-    , (1, enemyPos (V2 100 200) Blue)
-    , (1, enemyPos (V2 200 400) Pink)
-    , (1, enemyPos (V2 400 400) Pink)
+    [ (1, enemyPos (V2 300 200) Blue)
     ]
   where
     bulletLook = Look 14 SquareShape
     somePath pos = 
-        divide 32 (Position pos)
+        divide 4 (Position pos)
         & scaleTime 50
         & scaleVelocity 120
+        & rotate (pi / 4) (Position pos)
     somePattern pol = 
         pathWithLook (Angle 0, AngularV 0) (bulletLook pol)
     enemyLook = Look 28 SquareShape

@@ -13,6 +13,7 @@ module Game.Logic.Patterns
     , makeTimeLineRepeat
     , Path
     , divide
+    , rotate
     , scaleTime
     , scaleVelocity
     , Bullet(..)
@@ -26,7 +27,7 @@ where
 
 import Apecs (Component, Map, Storage)
 import Data.Function((&))
-import Linear (V2(..), (*^), angle)
+import Linear (V2(..), (*^), (!*), angle)
 
 import Game.Logic.Geometry
 
@@ -147,6 +148,19 @@ divide spacing (Position center) = Path $
             in map ((* ang) . fromIntegral) [0..spacing - 1]
     makeKinetic dir = (Position (center + dir), Velocity dir)
 
+-- | Rotate every position in a path by an angle around a position.
+rotate :: Double -> Position -> Path -> Path
+rotate alpha (Position center) (Path xs) = Path . (<$> xs) $
+    \(p, v) -> (rotPos p, rotV v)
+  where
+    rotMat = (V2 (V2 (cos alpha) (-(sin alpha)))
+                 (V2 (sin alpha) (cos alpha)) !*)
+    rotV (Velocity v) = Velocity (rotMat v)
+    rotPos (Position pos) = pos
+        & (\x -> x - center) 
+        & rotMat
+        & (+ center)
+        & Position
 
 {- | Advances every position by dT * velocity.
 
