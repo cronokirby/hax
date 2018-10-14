@@ -36,6 +36,7 @@ spriteLocations :: [SpriteLocation]
 spriteLocations = map makeLocation
     [ (60, 60, "square.bmp")
     , (60, 60, "triangle.bmp")
+    , (60, 60, "heart.bmp")
     ]
   where
     spritePath = "resources/sprites/"
@@ -49,6 +50,7 @@ The tag indicates the spritesheet, and the second the element.
 data SpriteIndex
     = SpSquarePink | SpSquareBlue
     | SpTrianglePink | SpTriangleBlue
+    | SpHeartPink | SpHeartBlue
 
 -- | Contains a raw index in (spritesheet, spriteframe) form
 data RawIndex = RawIndex !Int !Int
@@ -59,6 +61,8 @@ getRaw SpSquarePink   = RawIndex 0 0
 getRaw SpSquareBlue   = RawIndex 0 1
 getRaw SpTrianglePink = RawIndex 1 0
 getRaw SpTriangleBlue = RawIndex 1 1
+getRaw SpHeartPink    = RawIndex 2 0
+getRaw SpHeartBlue    = RawIndex 2 1
 
 
 {- | Used to contain the data for a Sprite and all its animations.
