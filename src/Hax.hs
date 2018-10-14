@@ -10,7 +10,7 @@ import Data.Word (Word32)
 import Linear (V2(..))
 import qualified SDL
 
-import Drawing (drawSprites)
+import Drawing (draw)
 import Game.Input (Input, initialInput, gatherInput)
 import Game.World
 import Resources.Sprite (SpriteData, loadProjectSprites)
@@ -53,7 +53,7 @@ mainLoop renderer ticks sprites input world = do
         newInput = gatherInput toggleCheck input
         dT = fromIntegral (newTicks - ticks) / 1000
     toDraw <- runWith world (stepGame dT newInput)
-    drawSprites toDraw sprites renderer
+    draw toDraw sprites renderer
     unless quit (mainLoop renderer newTicks sprites newInput world)
 
 

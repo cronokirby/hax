@@ -84,6 +84,7 @@ makeWorld "World"
     , ''BulletScript
     , ''Enemy
     , ''GlobalTimeLine
+    , ''Hud
     ]
 
 type Game a = System World a
@@ -98,9 +99,10 @@ initialiseGame =
     in void $ do
         newEntity (Player 0, (pos, velocity, look))
         newEntity (GlobalTimeLine mainLevel)
+        set global (LevelHud Pink 3)
 
 -- | Steps the game forward with a delta and player input
-stepGame :: Double -> Input -> Game [(Position, Maybe Angle, Look)]
+stepGame :: Double -> Input -> Game (Hud, [(Position, Maybe Angle, Look)])
 stepGame dT input = do
     handleInput dT input
     handleScripts dT
@@ -111,23 +113,28 @@ stepGame dT input = do
     handleCollisions
     deleteLowHealth
     deleteOffscreen
-    getAll
+    entities <- getAll
+    hud <- get global
+    return (hud, entities)
 
 
 -- | Changes the game based on the player's input
 handleInput :: Double -> Input -> Game ()
 handleInput dT input = do
-    cmap (handlePlayer dT)
+    -- We need to potentially change the hud color
+    cmapM (handlePlayer dT)
     when ((getHeld . inputShooting) input) . void $ cmapM shoot
   where
     -- Sets player speed, decrements reload counter, and switches polarity
-    handlePlayer :: Double -> (Player, Velocity, Look) -> (Player, Velocity, Look)
-    handlePlayer dT (Player reload, _, l) =
+    handlePlayer :: Double -> (Player, Velocity, Look) -> Game (Player, Velocity, Look)
+    handlePlayer dT (Player reload, _, l) = do
         let speed = getSpeed input
-            newLook = if (getToggle . inputSwitch) input
-                then switchPolarity l
+            switchInput = getToggle (inputSwitch input)
+            newLook@(Look _ _ p) = if switchInput 
+                then switchPolarity l 
                 else l
-        in (Player (reload - dT), Velocity speed, newLook)
+        modify global (setHudColor p)
+        return (Player (reload - dT), Velocity speed, newLook)
     {- Creates a new bullet when the player can shoot, and resets
     their reload value if shot.
     -}

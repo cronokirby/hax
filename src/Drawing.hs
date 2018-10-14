@@ -2,7 +2,7 @@
 Description: Contains utility functions for drawing sprites
 -}
 module Drawing
-    (drawSprites
+    ( draw
     )
 where
 
@@ -12,7 +12,8 @@ import Foreign.C.Types (CDouble(..), CInt)
 import qualified SDL
 import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 
-import Game.Logic (Position(..), Angle(..), Look(..), Polarity(..), Shape(..))
+import Game.Logic ( Position(..), Angle(..), Look(..), Polarity(..)
+                  , Shape(..), Hud(..))
 import Resources.Sprite
 
 
@@ -49,10 +50,23 @@ clearScreen renderer = do
 
 
 -- | Draws all the sprites, including the background
-drawSprites :: [(Position, Maybe Angle, Look)] -> SpriteData -> SDL.Renderer -> IO ()
-drawSprites toDraw sprites renderer = do
+draw :: (Hud, [(Position, Maybe Angle, Look)]) -> SpriteData -> SDL.Renderer -> IO ()
+draw (hud, toDraw) sprites renderer = do
     clearScreen renderer
     forM_ toDraw $ \(pos, angle, look) ->
         renderLook pos (fromMaybe (Angle 0) angle) look sprites renderer
+    drawHud sprites renderer hud
     SDL.present renderer
     
+-- | Draws the head up display
+drawHud :: SpriteData -> SDL.Renderer -> Hud -> IO ()
+drawHud _ _ NoHud          = return ()
+drawHud sprites renderer (LevelHud polarity health) =
+    let sprite = case polarity of
+            Pink -> SpHeartPink
+            Blue -> SpHeartBlue
+        (sheet, source) = getSprite sprites sprite
+        dest pos = Just (Rectangle (P pos) (V2 30 30))
+        draw pos = SDL.copy renderer (sheetTexture sheet) source (dest pos)
+    in forM_ (map (fromIntegral . (\x -> 40 * x - 10)) [1..health]) $ \x ->
+        draw (V2 x 10)

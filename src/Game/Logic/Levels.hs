@@ -6,15 +6,17 @@ Describes levels by talking about enemies and the points in time
 where they spawn, as well as what behaviour they have.
 -}
 module Game.Logic.Levels
-    ( Health (..)
+    ( Health(..)
     , Enemy(..)
     , EnemyUnit
+    , Hud(..)
+    , setHudColor
     , LevelEvents(..)
     , mainLevel
     )
 where
 
-import Apecs (Component, Map, Storage)
+import Apecs (Component, Global, Map, Storage)
 import Data.Function ((&))
 import Linear (V2(..))
 
@@ -64,6 +66,40 @@ enemyWithScript :: BulletScript -> EnemyUnit -> EnemyUnit
 enemyWithScript script (tag, h, visible, _) =
     (tag, h, visible, script)
 
+
+{- Hud -}
+
+data Hud
+    = NoHud -- ^ No hud means we're not in a level
+    | LevelHud Polarity Int -- ^ The hud displayed in a level, with color and health
+    deriving (Show)
+
+instance Semigroup Hud where
+    h <> NoHud = h
+    _ <> h    = h
+
+instance Monoid Hud where
+    mempty = NoHud
+    mappend = (<>)
+
+instance Component Hud where
+    type Storage Hud = Global Hud
+
+{- | Sets the HUD color.
+
+Does nothing if no level HUD is up.
+
+>>> setHudColor Blue (LevelHud Pink 1)
+LevelHud Blue 1
+>>> setHudColor NoHud
+NoHud
+-}
+setHudColor :: Polarity -> Hud -> Hud
+setHudColor _ NoHud          = NoHud
+setHudColor p (LevelHud _ i) = LevelHud p i
+
+
+{- Levels -}
 
 -- | Represents the events that can occur in a level
 data LevelEvents 
