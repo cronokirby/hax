@@ -6,7 +6,7 @@ module Drawing
     )
 where
 
-import Control.Monad (forM)
+import Control.Monad (forM_)
 import Data.Maybe (fromMaybe)
 import Foreign.C.Types (CDouble(..), CInt)
 import qualified SDL
@@ -52,7 +52,7 @@ clearScreen renderer = do
 drawSprites :: [(Position, Maybe Angle, Look)] -> SpriteData -> SDL.Renderer -> IO ()
 drawSprites toDraw sprites renderer = do
     clearScreen renderer
-    forM toDraw $ \(pos, angle, look) ->
+    forM_ toDraw $ \(pos, angle, look) ->
         renderLook pos (fromMaybe (Angle 0) angle) look sprites renderer
     SDL.present renderer
     
