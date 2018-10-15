@@ -11,7 +11,6 @@ module Resources
     , SpriteSheet(..)
     , sheetTexture
     , Resources(..)
-    , spriteData
     , getSprite
     , loadProjectResources
     )
@@ -120,7 +119,7 @@ loadResources renderer spriteLs fontL = do
         SDL.createTextureFromSurface renderer &
         fmap (SpriteSheet w h)
     loadFont (FontLocation path) = 
-            SDL.Font.load path 14
+            SDL.Font.load path 20
 
 -- | Loads the sprites using the locations in Resources.Sprite
 loadProjectResources :: SDL.Renderer -> IO Resources

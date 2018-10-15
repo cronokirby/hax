@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-|
 Description: Contains utility functions for drawing sprites
 -}
@@ -8,8 +9,10 @@ where
 
 import Control.Monad (forM_)
 import Data.Maybe (fromMaybe)
+import Data.Text (Text)
 import Foreign.C.Types (CDouble(..), CInt)
 import qualified SDL
+import qualified SDL.Font
 import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 
 import Game.Logic ( Position(..), Angle(..), Look(..), Polarity(..)
@@ -68,5 +71,15 @@ drawHud resources renderer (LevelHud polarity health) =
         (sheet, source) = getSprite resources sprite
         dest pos = Just (Rectangle (P pos) (V2 30 30))
         doDraw pos = SDL.copy renderer (sheetTexture sheet) source (dest pos)
-    in forM_ (map (fromIntegral . (\x -> 40 * x - 10)) [1..health]) $ \x ->
-        doDraw (V2 x 10)
+    in do
+        forM_ (map (fromIntegral . (\x -> 40 * x - 10)) 
+            [1..health]) $ \x -> doDraw (V2 x 10)
+        drawText "00045678" resources renderer
+    
+drawText :: Text -> Resources -> SDL.Renderer -> IO ()
+drawText t (Resources _ font) renderer = do
+    s <- SDL.Font.solid font (V4 0xFF 0xFF 0xFF 0xFF) t
+    texture <- SDL.createTextureFromSurface renderer s
+    let dest = Just (Rectangle (P (V2 410 5)) (V2 150 30))
+    SDL.copy renderer texture Nothing dest
+    return ()
