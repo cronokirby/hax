@@ -63,7 +63,24 @@ instance Component Player where
 -- | All the components associated with a player
 type PlayerUnit = (Player, Visible)
 
-type Unit = Either BulletUnit (Either PlayerUnit EnemyUnit)
+{- | Represents the bullets fired by the player.
+
+It's necessary to have a seperate type, since we want to make sure
+that enemies only take damage from this type of bullet.
+-}
+data PlayerBullet = PlayerBullet
+
+instance Component PlayerBullet where
+    type Storage PlayerBullet = Map PlayerBullet
+
+-- | All the components associated with a player bullet
+type PlayerBulletUnit = (PlayerBullet, Visible)
+
+
+type Unit 
+    = Either 
+      (Either BulletUnit PlayerBulletUnit) 
+      (Either PlayerUnit EnemyUnit)
 
 -- | Represents the global timeline for the game
 newtype GlobalTimeLine = GlobalTimeLine (TimeLine LevelEvents)
@@ -80,6 +97,7 @@ makeWorld "World"
     , ''Look
     , ''Health
     , ''Player
+    , ''PlayerBullet
     , ''Bullet
     , ''BulletScript
     , ''Enemy
@@ -104,6 +122,16 @@ initialiseGame =
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game (Hud, [(Position, Maybe Angle, Look)])
 stepGame dT input = do
+    -- Detect what state we're in based on the hud
+    -- We might want to do this with some other mechanism
+    hud <- get global
+    case hud of
+        NoHud          -> return (NoHud, [])
+        (LevelHud _ _) -> stepLevel dT input
+
+-- | Advances the game logic while currently in a level.
+stepLevel :: Double -> Input -> Game (Hud, [(Position, Maybe Angle, Look)])
+stepLevel dT input = do
     handleInput dT input
     handleScripts dT
     handleTimeLine dT
@@ -152,7 +180,7 @@ handleInput dT input = do
             position = Position (p - V2 0 size)
             angle = Angle 0
             angularV = AngularV 720
-        in void $ newEntity (Bullet, ((position, velocity), (angle, angularV), look))
+        in void $ newEntity (PlayerBullet, ((position, velocity), (angle, angularV), look))
 
 -- | Steps the timeLine forward, and handles the events
 handleTimeLine :: Double -> Game ()
@@ -191,7 +219,7 @@ clampPlayer = cmap $ \(Player r, look@(Look size _ _), p) ->
 handleCollisions :: Game ()
 handleCollisions = cmapM_ doCollide
   where
-    doCollide :: (Bullet, Position, Look, Entity) 
+    doCollide :: (PlayerBullet, Position, Look, Entity) 
               -> Game ()
     doCollide (_, pos, lookB@(Look _ _ colorB), etyB) =
         cmapM_ $ \(Enemy, posE, Health h, lookE@(Look _ _ colorE), etyE) ->
