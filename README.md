@@ -17,7 +17,7 @@ for that need to be installed:
 There should be similar packages on other distributions.
 
 ```
-sudo apt install libsdl2-dev
+sudo apt install libsdl2-dev libsdl2-ttf-dev
 stack build
 ```
 
@@ -26,6 +26,7 @@ stack build
 
 ```
 brew install sdl2
+brew install sdl2_ttf
 stack build
 ```
 
@@ -38,7 +39,7 @@ installation:
 
 ```
 stack exec -- pacman -Syu
-stack exec -- pacman -S mingw64/mingw-w64-x86_64-pkg-config mingw64/mingw-w64-x86_64-SDL2
+stack exec -- pacman -S mingw64/mingw-w64-x86_64-pkg-config mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_ttf
 stack build
 ```
 
