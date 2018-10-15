@@ -67,6 +67,6 @@ drawHud resources renderer (LevelHud polarity health) =
             Blue -> SpHeartBlue
         (sheet, source) = getSprite resources sprite
         dest pos = Just (Rectangle (P pos) (V2 30 30))
-        draw pos = SDL.copy renderer (sheetTexture sheet) source (dest pos)
+        doDraw pos = SDL.copy renderer (sheetTexture sheet) source (dest pos)
     in forM_ (map (fromIntegral . (\x -> 40 * x - 10)) [1..health]) $ \x ->
-        draw (V2 x 10)
+        doDraw (V2 x 10)
