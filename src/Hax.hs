@@ -9,11 +9,12 @@ import Control.Monad (forM, unless)
 import Data.Word (Word32)
 import Linear (V2(..))
 import qualified SDL
+import qualified SDL.Font
 
 import Drawing (draw)
 import Game.Input (Input, initialInput, gatherInput)
 import Game.World
-import Resources (SpriteData, loadProjectSprites)
+import Resources (Resources, loadProjectResources)
 
 
 -- | The window configuration for the game
@@ -27,25 +28,27 @@ windowConfig = SDL.defaultWindow
 run :: IO ()
 run = do
     SDL.initialize [SDL.InitVideo]
+    SDL.Font.initialize
     window <- SDL.createWindow "Hax" windowConfig
     renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
     -- Initialising data
-    spriteData <- loadProjectSprites renderer
+    resources <- loadProjectResources renderer
     world <- initWorld 
     runWith world initialiseGame
     -- Prepping rendering
     SDL.showWindow window
     -- Looping
     ticks <- SDL.ticks
-    mainLoop renderer ticks spriteData initialInput world
+    mainLoop renderer ticks resources initialInput world
     -- cleanup
     SDL.destroyWindow window
+    SDL.Font.quit
     SDL.quit
 
 
 -- | The main loop of the game
-mainLoop :: SDL.Renderer -> Word32 -> SpriteData -> Input -> World -> IO ()
-mainLoop renderer ticks sprites input world = do
+mainLoop :: SDL.Renderer -> Word32 -> Resources -> Input -> World -> IO ()
+mainLoop renderer ticks resources input world = do
     events <- SDL.pollEvents
     toggleCheck <- SDL.getKeyboardState
     newTicks <- SDL.ticks
@@ -53,8 +56,9 @@ mainLoop renderer ticks sprites input world = do
         newInput = gatherInput toggleCheck input
         dT = fromIntegral (newTicks - ticks) / 1000
     toDraw <- runWith world (stepGame dT newInput)
-    draw toDraw sprites renderer
-    unless quit (mainLoop renderer newTicks sprites newInput world)
+    draw toDraw resources renderer
+    unless quit $
+        mainLoop renderer newTicks resources newInput world
 
 
 -- | This is true of the window needs to close, or esc is prssed

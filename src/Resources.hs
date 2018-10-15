@@ -10,9 +10,10 @@ module Resources
     ( SpriteIndex(..)
     , SpriteSheet(..)
     , sheetTexture
-    , SpriteData
+    , Resources(..)
+    , spriteData
     , getSprite
-    , loadProjectSprites
+    , loadProjectResources
     )
 where
 
@@ -20,6 +21,7 @@ import Data.Function ((&))
 import Foreign.C.Types (CInt)
 import System.IO (FilePath)
 import qualified SDL
+import qualified SDL.Font
 import SDL (Rectangle(..), Point(..), V2(..))
 
 
@@ -80,38 +82,56 @@ getFrame (SpriteSheet w h texture) index = Just $
     Rectangle (P (V2 (w * fromIntegral index) 0)) (V2 w h)
 
 
--- | Contains all the sprite data for the game
-newtype SpriteData = SpriteData [SpriteSheet]
+-- | Wrapper around the filepath for a ttf font
+newtype FontLocation = FontLocation FilePath
+
+-- | Global font location reference, in sync with filesystem
+fontLocation :: FontLocation
+fontLocation = FontLocation "resources/fonts/joystix.ttf"
+
+-- | Contains all the resource information for the game
+data Resources = Resources 
+    { spriteData :: [SpriteSheet]
+    , font :: SDL.Font.Font
+    }
 
 {- | Gets the sprite sheet and frame corresponding to a given index
 
 This allows us to keep SpriteData's representation independent
 -}
-getSprite :: SpriteData -> SpriteIndex -> (SpriteSheet, Maybe (Rectangle CInt))
-getSprite (SpriteData sheets) index =
+getSprite :: Resources -> SpriteIndex -> (SpriteSheet, Maybe (Rectangle CInt))
+getSprite (Resources sheets _) index =
     let (RawIndex sheetPos frame) = getRaw index
         sheet = sheets !! sheetPos
     in (sheet, getFrame sheet frame)
 
 
 -- | Loads sprites from a list of locations into a renderer
-loadSprites :: SDL.Renderer -> [SpriteLocation] -> IO SpriteData
-loadSprites renderer = fmap SpriteData . mapM load
+loadResources :: SDL.Renderer 
+              -> [SpriteLocation] -> FontLocation
+              -> IO Resources
+loadResources renderer spriteLs fontL = do
+    sprites <- mapM loadSprite spriteLs
+    font <- loadFont fontL
+    return (Resources sprites font)
   where
-    load (SpriteLocation w h path) =
+    loadSprite (SpriteLocation w h path) =
         SDL.loadBMP path >>=
         SDL.createTextureFromSurface renderer &
         fmap (SpriteSheet w h)
+    loadFont (FontLocation path) = 
+            SDL.Font.load path 14
 
 -- | Loads the sprites using the locations in Resources.Sprite
-loadProjectSprites :: SDL.Renderer -> IO SpriteData
-loadProjectSprites r = loadSprites r spriteLocations
+loadProjectResources :: SDL.Renderer -> IO Resources
+loadProjectResources r =
+    loadResources r spriteLocations fontLocation
 
 
 -- | Renders a sprite from sprite data, given an index
-renderSprite :: SpriteData -> SpriteIndex -> Maybe (Rectangle CInt)
+renderSprite :: Resources -> SpriteIndex -> Maybe (Rectangle CInt)
              -> SDL.Renderer -> IO ()
-renderSprite (SpriteData sheets) index dest r =
+renderSprite (Resources sheets _) index dest r =
     let (RawIndex sheetPos frame) = getRaw index
         -- Always in the list, because we're keeping locations in sync
         sheet = sheets !! sheetPos
