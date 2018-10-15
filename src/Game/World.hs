@@ -141,6 +141,7 @@ stepLevel dT input = do
     handleCollisions
     deleteLowHealth
     deleteOffscreen
+    floorScore
     entities <- getAll
     hud <- get global
     return (hud, entities)
@@ -280,3 +281,9 @@ deleteOffscreen = cmap delete
             else Right Not
       where
         inBounds s mx = s - size <= mx && s + size >= 0
+
+
+-- | Make sure score is at least 0
+floorScore :: Game ()
+floorScore = modify global $
+    \(InLevel p i s) -> InLevel p i (max 0 s)
