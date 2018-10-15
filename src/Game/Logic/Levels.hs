@@ -109,7 +109,6 @@ data LevelEvents
 mainLevel :: TimeLine LevelEvents
 mainLevel = makeTimeLineOnce 
     [ (1, enemyPos (V2 300 200) Blue)
-    , (1, enemyPos (V2 400 100) Pink)
     ]
   where
     bulletLook = Look 14 SquareShape

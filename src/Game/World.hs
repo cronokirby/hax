@@ -217,16 +217,26 @@ clampPlayer = cmap $ \(Player r, look@(Look size _ _), p) ->
 
 -- | Handles collisions between bullets and enemies
 handleCollisions :: Game ()
-handleCollisions = cmapM_ doCollide
+handleCollisions = do
+    cmapM_ checkEnemies
+    cmapM_ checkPlayer
   where
-    doCollide :: (PlayerBullet, Position, Look, Entity) 
-              -> Game ()
-    doCollide (_, pos, lookB@(Look _ _ colorB), etyB) =
+    checkEnemies :: (PlayerBullet, Position, Look, Entity) 
+                 -> Game ()
+    checkEnemies (_, posB, lookB@(Look _ _ colorB), etyB) =
         cmapM_ $ \(Enemy, posE, Health h, lookE@(Look _ _ colorE), etyE) ->
-            when (collides (-14) (pos, lookB) (posE, lookE)) $ do
+            when (collides (-14) (posB, lookB) (posE, lookE)) $ do
                 destroy etyB (Proxy @Unit)
                 let newH = if colorB == colorE then 1 else -1
                 set etyE (Health (h + newH))
+    checkPlayer :: (Bullet, Position, Look, Entity) -> Game ()
+    checkPlayer (_, posB, lookB@(Look _ _ colorB), etyB) =
+        cmapM_ $ \(Player _, posP, lookP@(Look _ _ colorP)) ->
+            when (collides (-26) (posB, lookB) (posP, lookP)) $ do
+                destroy etyB (Proxy @Unit)
+                when (colorB /= colorP) . modify global $
+                    \(LevelHud p i) -> LevelHud p (i - 1)
+                
 
 -- | Removes all enemies with no Health
 deleteLowHealth :: Game ()
