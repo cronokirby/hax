@@ -21,7 +21,7 @@ module Game.World
 where
 
 import Apecs
-import Control.Monad (forM_, void, when)
+import Control.Monad (forM_, unless, void, when)
 import Data.Maybe (fromMaybe)
 import Linear (V2(..), (^*))
 
@@ -102,7 +102,7 @@ makeWorld "World"
     , ''BulletScript
     , ''Enemy
     , ''GlobalTimeLine
-    , ''Hud
+    , ''LevelState
     ]
 
 type Game a = System World a
@@ -117,20 +117,20 @@ initialiseGame =
     in void $ do
         newEntity (Player 0, (pos, velocity, look))
         newEntity (GlobalTimeLine mainLevel)
-        set global (LevelHud Pink 3)
+        set global (InLevel Pink 3 0)
 
 -- | Steps the game forward with a delta and player input
-stepGame :: Double -> Input -> Game (Hud, [(Position, Maybe Angle, Look)])
+stepGame :: Double -> Input -> Game (LevelState, [(Position, Maybe Angle, Look)])
 stepGame dT input = do
     -- Detect what state we're in based on the hud
     -- We might want to do this with some other mechanism
     hud <- get global
     case hud of
-        NoHud          -> return (NoHud, [])
-        (LevelHud _ _) -> stepLevel dT input
+        NoLevel       -> return (NoLevel, [])
+        (InLevel _ _ _) -> stepLevel dT input
 
 -- | Advances the game logic while currently in a level.
-stepLevel :: Double -> Input -> Game (Hud, [(Position, Maybe Angle, Look)])
+stepLevel :: Double -> Input -> Game (LevelState, [(Position, Maybe Angle, Look)])
 stepLevel dT input = do
     handleInput dT input
     handleScripts dT
@@ -227,23 +227,46 @@ handleCollisions = do
         cmapM_ $ \(Enemy, posE, Health h, lookE@(Look _ _ colorE), etyE) ->
             when (collides (-14) (posB, lookB) (posE, lookE)) $ do
                 destroy etyB (Proxy @Unit)
-                let newH = if colorB == colorE then 1 else -1
+                let sameColor = colorB == colorE
+                    newH = if sameColor then 1 else -1
+                unless sameColor (incrementScore 1000)
                 set etyE (Health (h + newH))
     checkPlayer :: (Bullet, Position, Look, Entity) -> Game ()
     checkPlayer (_, posB, lookB@(Look _ _ colorB), etyB) =
-        cmapM_ $ \(Player _, posP, lookP@(Look _ _ colorP)) ->
-            when (collides (-26) (posB, lookB) (posP, lookP)) $ do
+        cmapM_ $ \(Player _, posP, lookP@(Look _ _ colorP)) -> do
+            let collidesAt d = collides d (posB, lookB) (posP, lookP)
+                sameColor = colorB == colorP
+            -- check for close call collision
+            when (collidesAt (-18) && not sameColor) $
+                incrementScore 1
+            -- check for bad collision
+            when (collidesAt (-26)) $ do
                 destroy etyB (Proxy @Unit)
-                when (colorB /= colorP) . modify global $
-                    \(LevelHud p i) -> LevelHud p (i - 1)
+                if not sameColor
+                    then decrementPlayerHealth
+                    else incrementScore 250
                 
+{- | Decrement the health of the player in a level
+
+This also affects the score of the player.
+-}
+decrementPlayerHealth :: Game ()
+decrementPlayerHealth = modify global $
+    \(InLevel p h s) -> InLevel p (h - 1) (s - 30000)
+
+-- | Increment the score in a level
+incrementScore :: Int -> Game ()
+incrementScore toAdd = modify global $
+    \(InLevel p h s) -> InLevel p h (s + toAdd)
 
 -- | Removes all enemies with no Health
 deleteLowHealth :: Game ()
-deleteLowHealth = cmap $ \e@(Enemy, Health h) ->
+deleteLowHealth = cmapM $ \e@(Enemy, Health h) ->
     if h <= 0
-        then Left (Not @ EnemyUnit)
-        else Right e
+        then do -- Delete enemy and increment score
+            incrementScore (10000)
+            return (Left (Not @ EnemyUnit))
+        else return (Right e)
     
 -- | Deletes all visible particles whose position is offscreen
 deleteOffscreen :: Game ()

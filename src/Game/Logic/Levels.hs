@@ -9,7 +9,7 @@ module Game.Logic.Levels
     ( Health(..)
     , Enemy(..)
     , EnemyUnit
-    , Hud(..)
+    , LevelState(..)
     , setHudColor
     , LevelEvents(..)
     , mainLevel
@@ -67,23 +67,25 @@ enemyWithScript script (tag, h, visible, _) =
     (tag, h, visible, script)
 
 
-{- Hud -}
+{- LevelState -}
 
-data Hud
-    = NoHud -- ^ No hud means we're not in a level
-    | LevelHud Polarity Int -- ^ The hud displayed in a level, with color and health
+data LevelState
+    -- | Not currently in a level
+    = NoLevel
+    -- | Player color, health, and global score
+    | InLevel Polarity Int Int
     deriving (Show)
 
-instance Semigroup Hud where
-    h <> NoHud = h
+instance Semigroup LevelState where
+    h <> NoLevel = h
     _ <> h    = h
 
-instance Monoid Hud where
-    mempty = NoHud
+instance Monoid LevelState where
+    mempty = NoLevel
     mappend = (<>)
 
-instance Component Hud where
-    type Storage Hud = Global Hud
+instance Component LevelState where
+    type Storage LevelState = Global LevelState
 
 {- | Sets the HUD color.
 
@@ -94,9 +96,9 @@ LevelHud Blue 1
 >>> setHudColor NoHud
 NoHud
 -}
-setHudColor :: Polarity -> Hud -> Hud
-setHudColor _ NoHud          = NoHud
-setHudColor p (LevelHud _ i) = LevelHud p i
+setHudColor :: Polarity -> LevelState -> LevelState
+setHudColor _ NoLevel       = NoLevel
+setHudColor p (InLevel _ i s) = InLevel p i s
 
 
 {- Levels -}
@@ -109,11 +111,13 @@ data LevelEvents
 mainLevel :: TimeLine LevelEvents
 mainLevel = makeTimeLineOnce 
     [ (1, enemyPos (V2 300 200) Blue)
+    , (1, enemyPos (V2 100 100) Pink)
+    , (1, enemyPos (V2 500 100) Pink)
     ]
   where
     bulletLook = Look 14 SquareShape
-    somePath pos = 
-        divide 32 (Position pos)
+    somePath d pos = 
+        divide d (Position pos)
         & scaleTime 50
         & scaleVelocity 120
         & rotate (pi / 4) (Position pos)
@@ -123,7 +127,10 @@ mainLevel = makeTimeLineOnce
     enemyHealth = Health 15
     enemyPos pos pol = 
         let someScript = BulletScript $ makeTimeLineRepeat 
-                [(0.4, somePattern pol (somePath pos))]
+                [ (0.4, somePattern pol (somePath 32 pos))
+                , (0.6, somePattern pol (somePath 16 pos))
+                , (1, somePattern pol (somePath 8 pos))
+                ]
         in makeStaticEnemy (Position pos) (enemyLook pol) enemyHealth
             & enemyWithRotation (AngularV 120)
             & enemyWithScript someScript

@@ -9,14 +9,14 @@ where
 
 import Control.Monad (forM_)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text)
+import Data.Text (Text, justifyRight, pack)
 import Foreign.C.Types (CDouble(..), CInt)
 import qualified SDL
 import qualified SDL.Font
 import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 
 import Game.Logic ( Position(..), Angle(..), Look(..), Polarity(..)
-                  , Shape(..), Hud(..))
+                  , Shape(..), LevelState(..))
 import Resources
 
 
@@ -53,7 +53,7 @@ clearScreen renderer = do
 
 
 -- | Draws all the sprites, including the background
-draw :: (Hud, [(Position, Maybe Angle, Look)]) -> Resources -> SDL.Renderer -> IO ()
+draw :: (LevelState, [(Position, Maybe Angle, Look)]) -> Resources -> SDL.Renderer -> IO ()
 draw (hud, toDraw) resources renderer = do
     clearScreen renderer
     forM_ toDraw $ \(pos, angle, look) ->
@@ -62,24 +62,27 @@ draw (hud, toDraw) resources renderer = do
     SDL.present renderer
     
 -- | Draws the head up display
-drawHud :: Resources -> SDL.Renderer -> Hud -> IO ()
-drawHud _ _ NoHud          = return ()
-drawHud resources renderer (LevelHud polarity health) =
+drawHud :: Resources -> SDL.Renderer -> LevelState -> IO ()
+drawHud _ _ NoLevel          = return ()
+drawHud resources renderer (InLevel polarity health score) =
     let sprite = case polarity of
             Pink -> SpHeartPink
             Blue -> SpHeartBlue
         (sheet, source) = getSprite resources sprite
         dest pos = Just (Rectangle (P pos) (V2 30 30))
         doDraw pos = SDL.copy renderer (sheetTexture sheet) source (dest pos)
+        textScore = 
+            let correctedScore = min (max score 0) 999999999
+            in justifyRight 9 '0' . pack . show $ correctedScore
     in do
         forM_ (map (fromIntegral . (\x -> 40 * x - 10)) 
             [1..health]) $ \x -> doDraw (V2 x 10)
-        drawText "00045678" resources renderer
+        drawText textScore resources renderer
     
 drawText :: Text -> Resources -> SDL.Renderer -> IO ()
 drawText t (Resources _ font) renderer = do
     s <- SDL.Font.solid font (V4 0xFF 0xFF 0xFF 0xFF) t
     texture <- SDL.createTextureFromSurface renderer s
-    let dest = Just (Rectangle (P (V2 410 5)) (V2 150 30))
+    let dest = Just (Rectangle (P (V2 390 5)) (V2 170 30))
     SDL.copy renderer texture Nothing dest
     return ()
