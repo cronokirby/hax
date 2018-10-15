@@ -63,7 +63,9 @@ draw (hud, toDraw) resources renderer = do
     
 -- | Draws the head up display
 drawHud :: Resources -> SDL.Renderer -> LevelState -> IO ()
-drawHud _ _ NoLevel          = return ()
+drawHud resources renderer GameOver  = 
+    let dest = Just (Rectangle (P (V2 200 350)) (V2 200 50))
+    in drawText "game over" dest resources renderer
 drawHud resources renderer (InLevel polarity health score) =
     let sprite = case polarity of
             Pink -> SpHeartPink
@@ -71,18 +73,20 @@ drawHud resources renderer (InLevel polarity health score) =
         (sheet, source) = getSprite resources sprite
         dest pos = Just (Rectangle (P pos) (V2 30 30))
         doDraw pos = SDL.copy renderer (sheetTexture sheet) source (dest pos)
-        textScore = 
-            let correctedScore = min (max score 0) 999999999
-            in justifyRight 9 '0' . pack . show $ correctedScore
     in do
         forM_ (map (fromIntegral . (\x -> 40 * x - 10)) 
             [1..health]) $ \x -> doDraw (V2 x 10)
-        drawText textScore resources renderer
+        drawScore score resources renderer
     
-drawText :: Text -> Resources -> SDL.Renderer -> IO ()
-drawText t (Resources _ font) renderer = do
-    s <- SDL.Font.solid font (V4 0xFF 0xFF 0xFF 0xFF) t
+drawScore :: Int -> Resources -> SDL.Renderer -> IO ()
+drawScore score = drawText txt dest
+ where
+    correctedScore = min (max score 0) 999999999
+    txt = justifyRight 9 '0' . pack . show $ correctedScore
+    dest = Just (Rectangle (P (V2 390 5)) (V2 170 30))
+
+drawText :: Text -> Maybe (Rectangle CInt) -> Resources -> SDL.Renderer -> IO ()
+drawText txt dest (Resources _ font) renderer = do
+    s <- SDL.Font.solid font (V4 0xFF 0xFF 0xFF 0xFF) txt
     texture <- SDL.createTextureFromSurface renderer s
-    let dest = Just (Rectangle (P (V2 390 5)) (V2 170 30))
     SDL.copy renderer texture Nothing dest
-    return ()

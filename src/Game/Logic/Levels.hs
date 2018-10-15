@@ -70,18 +70,18 @@ enemyWithScript script (tag, h, visible, _) =
 {- LevelState -}
 
 data LevelState
-    -- | Not currently in a level
-    = NoLevel
+    -- | The game has finished (badly)
+    = GameOver
     -- | Player color, health, and global score
     | InLevel Polarity Int Int
     deriving (Show)
 
 instance Semigroup LevelState where
-    h <> NoLevel = h
+    h <> GameOver = h
     _ <> h    = h
 
 instance Monoid LevelState where
-    mempty = NoLevel
+    mempty = GameOver
     mappend = (<>)
 
 instance Component LevelState where
@@ -97,7 +97,7 @@ LevelHud Blue 1
 NoHud
 -}
 setHudColor :: Polarity -> LevelState -> LevelState
-setHudColor _ NoLevel       = NoLevel
+setHudColor _ GameOver        = GameOver
 setHudColor p (InLevel _ i s) = InLevel p i s
 
 

@@ -126,8 +126,9 @@ stepGame dT input = do
     -- We might want to do this with some other mechanism
     hud <- get global
     case hud of
-        NoLevel       -> return (NoLevel, [])
+        GameOver      -> return (GameOver, [])
         (InLevel _ _ _) -> stepLevel dT input
+    
 
 -- | Advances the game logic while currently in a level.
 stepLevel :: Double -> Input -> Game (LevelState, [(Position, Maybe Angle, Look)])
@@ -142,6 +143,7 @@ stepLevel dT input = do
     deleteLowHealth
     deleteOffscreen
     floorScore
+    checkPlayerHealth
     entities <- getAll
     hud <- get global
     return (hud, entities)
@@ -282,8 +284,13 @@ deleteOffscreen = cmap delete
       where
         inBounds s mx = s - size <= mx && s + size >= 0
 
-
 -- | Make sure score is at least 0
 floorScore :: Game ()
 floorScore = modify global $
     \(InLevel p i s) -> InLevel p i (max 0 s)
+
+-- | Set a game over if the player's health is <= 0
+checkPlayerHealth :: Game ()
+checkPlayerHealth = do
+    (InLevel _ h _) <- get global
+    when (h <= 0) (set global GameOver)
