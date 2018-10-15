@@ -13,7 +13,7 @@ import qualified SDL
 import Drawing (draw)
 import Game.Input (Input, initialInput, gatherInput)
 import Game.World
-import Resources.Sprite (SpriteData, loadProjectSprites)
+import Resources (SpriteData, loadProjectSprites)
 
 
 -- | The window configuration for the game

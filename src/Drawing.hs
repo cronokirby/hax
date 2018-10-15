@@ -14,7 +14,7 @@ import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 
 import Game.Logic ( Position(..), Angle(..), Look(..), Polarity(..)
                   , Shape(..), Hud(..))
-import Resources.Sprite
+import Resources
 
 
 -- | Gets the sprite index corresponding to a given look

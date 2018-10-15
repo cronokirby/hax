@@ -6,7 +6,7 @@ what sprites can exist. As such, it exports Sprite indices which
 are always valid, and a mapping to file resources which must always
 be kept in sync with the actual resources folder used in development.
 -}
-module Resources.Sprite
+module Resources
     ( SpriteIndex(..)
     , SpriteSheet(..)
     , sheetTexture
