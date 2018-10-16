@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
@@ -60,8 +61,18 @@ newtype Player = Player Double
 instance Component Player where
     type Storage Player = Unique Player
 
+-- | Represents the invincibility state of some entity
+data Invincibility 
+    -- | The entity will be invincible for the remaining time
+    = Invincible Double
+    | NotInvincible
+
+instance Component Invincibility where
+    type Storage Invincibility = Map Invincibility
+
+
 -- | All the components associated with a player
-type PlayerUnit = (Player, Visible)
+type PlayerUnit = (Player, Invincibility, Visible)
 
 {- | Represents the bullets fired by the player.
 
@@ -97,6 +108,7 @@ makeWorld "World"
     , ''Look
     , ''Health
     , ''Player
+    , ''Invincibility
     , ''PlayerBullet
     , ''Bullet
     , ''BulletScript
@@ -115,7 +127,7 @@ initialiseGame =
         pos = Position (V2 300 600)
         velocity = Velocity 0
     in void $ do
-        newEntity (Player 0, (pos, velocity, look))
+        newEntity (Player 0, NotInvincible, (pos, velocity, look))
         newEntity (GlobalTimeLine mainLevel)
         set global (InLevel Pink 3 0)
 
@@ -138,6 +150,7 @@ stepLevel dT input = do
     handleTimeLine dT
     stepKinetic dT
     stepSpinning dT
+    stepInvincibility dT
     clampPlayer
     handleCollisions
     deleteLowHealth
@@ -213,6 +226,25 @@ stepSpinning :: Double -> Game ()
 stepSpinning dT = cmap $ \(Angle a, AngularV v) ->
     (Angle (a + v * dT), AngularV v)
 
+
+{- | Advances the invincibility state of entities
+
+The remaining invincible time is decremented by the
+time step, and if the time is up, the component
+switches to not invincible.
+-}
+stepInvincibility :: Double -> Game ()
+stepInvincibility dT = cmap doStep
+  where
+    doStep i = case i of
+        NotInvincible -> NotInvincible
+        Invincible d ->
+            let now = d - dT
+            in if now <= 0 
+                then NotInvincible
+                else Invincible now
+
+
 -- | Keeps player within bounds
 clampPlayer :: Game ()
 clampPlayer = cmap $ \(Player r, look@(Look size _ _), p) ->
@@ -236,18 +268,21 @@ handleCollisions = do
                 set etyE (Health (h + newH))
     checkPlayer :: (Bullet, Position, Look, Entity) -> Game ()
     checkPlayer (_, posB, lookB@(Look _ _ colorB), etyB) =
-        cmapM_ $ \(Player _, posP, lookP@(Look _ _ colorP)) -> do
-            let collidesAt d = collides d (posB, lookB) (posP, lookP)
-                sameColor = colorB == colorP
-            -- check for close call collision
-            when (collidesAt (-18) && not sameColor) $
-                incrementScore 1
-            -- check for bad collision
-            when (collidesAt (-26)) $ do
-                destroy etyB (Proxy @Unit)
-                if not sameColor
-                    then decrementPlayerHealth
-                    else incrementScore 250
+        cmapM_ $ \case
+            (Player _, Invincible _, _, _, ety) -> return ()
+            (Player _, NotInvincible, posP, lookP@(Look _ _ colorP), etyP) -> do
+                let collidesAt d = collides d (posB, lookB) (posP, lookP)
+                    sameColor = colorB == colorP
+                -- check for close call collision
+                when (collidesAt (-18) && not sameColor) $
+                    incrementScore 1
+                -- check for bad collision
+                when (collidesAt (-26)) $ do
+                    destroy etyB (Proxy @Unit)
+                    set etyP (Invincible 0.5)
+                    if not sameColor
+                        then decrementPlayerHealth
+                        else incrementScore 250
                 
 {- | Decrement the health of the player in a level
 
