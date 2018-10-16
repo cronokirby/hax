@@ -302,7 +302,7 @@ deleteLowHealth :: Game ()
 deleteLowHealth = cmapM $ \e@(Enemy, Health h) ->
     if h <= 0
         then do -- Delete enemy and increment score
-            incrementScore (10000)
+            incrementScore 10000
             return (Left (Not @ EnemyUnit))
         else return (Right e)
     
