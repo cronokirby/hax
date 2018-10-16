@@ -106,13 +106,20 @@ setHudColor p (InLevel _ i s) = InLevel p i s
 -- | Represents the events that can occur in a level
 data LevelEvents 
     = CreateEnemy EnemyUnit -- ^ Create a new enemy at a position
+    | WaitForEnemies -- ^ Wait for enemies to die before advancing timeline
+
+instance Show LevelEvents where
+    show (CreateEnemy _) = "CreateEnemy"
+    show WaitForEnemies = "WaitForEnemies"
 
 
 mainLevel :: TimeLine LevelEvents
 mainLevel = makeTimeLineOnce 
     [ (1, enemyPos (V2 300 200) Blue)
-    , (1, enemyPos (V2 100 100) Pink)
-    , (1, enemyPos (V2 500 100) Pink)
+    , (1, WaitForEnemies)
+    , (2, enemyPos (V2 100 100) Pink)
+    , (2.2, WaitForEnemies)
+    , (3, enemyPos (V2 500 100) Pink)
     ]
   where
     bulletLook = Look 14 SquareShape

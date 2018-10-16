@@ -93,8 +93,15 @@ type Unit
       (Either BulletUnit PlayerBulletUnit) 
       (Either PlayerUnit EnemyUnit)
 
--- | Represents the global timeline for the game
-newtype GlobalTimeLine = GlobalTimeLine (TimeLine LevelEvents)
+-- | Represents the current state of the timeline
+data TimeLineState = TLPaused | TLRunning
+
+{- | Represents the global timeline for the game
+
+The timeline state is paused by request from the level, and unpaused
+when enemies disappear.
+-}
+data GlobalTimeLine = GlobalTimeLine TimeLineState (TimeLine LevelEvents)
 
 instance Component GlobalTimeLine where
     type Storage GlobalTimeLine = Unique GlobalTimeLine
@@ -128,7 +135,7 @@ initialiseGame =
         velocity = Velocity 0
     in void $ do
         newEntity (Player 0, NotInvincible, (pos, velocity, look))
-        newEntity (GlobalTimeLine mainLevel)
+        newEntity (GlobalTimeLine TLRunning mainLevel)
         set global (InLevel Pink 3 0)
 
 -- | Steps the game forward with a delta and player input
@@ -148,6 +155,7 @@ stepLevel dT input = do
     handleInput dT input
     handleScripts dT
     handleTimeLine dT
+    unPauseTimeLine
     stepKinetic dT
     stepSpinning dT
     stepInvincibility dT
@@ -200,12 +208,27 @@ handleInput dT input = do
 
 -- | Steps the timeLine forward, and handles the events
 handleTimeLine :: Double -> Game ()
-handleTimeLine dT = cmapM $ \(GlobalTimeLine tl) -> do
-    let (newTl, event) = stepTimeLine tl dT
-    maybe (return ()) handleEvent event
-    return (GlobalTimeLine newTl)
+handleTimeLine dT = cmapM $ \case
+    g@(GlobalTimeLine TLPaused _) -> return g
+    GlobalTimeLine TLRunning tl -> do
+        let (newTl, event) = stepTimeLine tl dT
+        tlState <- maybe (return TLRunning) handleEvent event
+        return (GlobalTimeLine tlState newTl)
   where
-    handleEvent (CreateEnemy enemy) = void $ newEntity enemy
+    handleEvent (CreateEnemy enemy) = do
+        void $ newEntity enemy
+        return TLRunning
+    handleEvent WaitForEnemies = return TLPaused
+
+-- | Unpauses time line if no enemies are left
+unPauseTimeLine :: Game ()
+unPauseTimeLine = do
+    enemies <- getAll
+    when (allDead enemies) . cmap $
+        \(GlobalTimeLine _ tl) -> GlobalTimeLine TLRunning tl
+  where
+    allDead :: [Enemy] -> Bool
+    allDead = null
 
 -- | Steps forward all animation scripts, and creates entities for them
 handleScripts :: Double -> Game ()
