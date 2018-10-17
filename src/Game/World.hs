@@ -307,10 +307,11 @@ handleCollisions = do
                 when (collidesAt (-26)) $ do
                     destroy etyB (Proxy @Unit)
                     set etyP (Invincible 0.5)
-                    -- trigger a screenshake
-                    set global ScreenShake
                     if not sameColor
-                        then decrementPlayerHealth
+                        then do
+                            -- trigger a screenshake
+                            set global ScreenShake
+                            decrementPlayerHealth
                         else incrementScore 250
                 
 {- | Decrement the health of the player in a level
