@@ -139,18 +139,18 @@ initialiseGame =
         set global (InLevel Pink 3 0)
 
 -- | Steps the game forward with a delta and player input
-stepGame :: Double -> Input -> Game (LevelState, [(Position, Maybe Angle, Look)])
+stepGame :: Double -> Input -> Game RenderInfo
 stepGame dT input = do
     -- Detect what state we're in based on the hud
     -- We might want to do this with some other mechanism
     hud <- get global
     case hud of
-        GameOver      -> return (GameOver, [])
+        GameOver      -> return (RenderInfo GameOver [] NoScreenEffect)
         (InLevel _ _ _) -> stepLevel dT input
     
 
 -- | Advances the game logic while currently in a level.
-stepLevel :: Double -> Input -> Game (LevelState, [(Position, Maybe Angle, Look)])
+stepLevel :: Double -> Input -> Game RenderInfo
 stepLevel dT input = do
     handleInput dT input
     handleScripts dT
@@ -167,7 +167,7 @@ stepLevel dT input = do
     checkPlayerHealth
     entities <- getAll
     hud <- get global
-    return (hud, entities)
+    return (RenderInfo hud entities NoScreenEffect)
 
 
 -- | Changes the game based on the player's input

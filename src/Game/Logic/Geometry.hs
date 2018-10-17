@@ -24,6 +24,7 @@ module Game.Logic.Geometry
     , Look(..)
     , Visible
     , collides
+    , ScreenEffect(..)
     )
 where
 
@@ -156,3 +157,9 @@ given the polygonal shape of our sprites.
 collides :: Double -> (Position, Look) -> (Position, Look) -> Bool
 collides infl (Position pos1, (Look w1 _ _)) (Position pos2, (Look w2 _ _)) = 
     distance pos1 pos2 - infl <= (w1 + w2)
+
+
+-- | Represents global effects to the look of the screen
+data ScreenEffect
+    = ScreenShake
+    | NoScreenEffect

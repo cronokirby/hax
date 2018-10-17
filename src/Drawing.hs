@@ -20,8 +20,7 @@ import qualified SDL
 import qualified SDL.Font
 import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 
-import Game.Logic ( Position(..), Angle(..), Look(..), Polarity(..)
-                  , Shape(..), LevelState(..))
+import Game.Logic
 import Resources
 
 
@@ -73,8 +72,8 @@ clearScreen = do
 
 
 -- | Draws all the sprites, including the background
-draw :: (LevelState, [(Position, Maybe Angle, Look)]) -> Resources -> Rendering ()
-draw (hud, toDraw) resources = do
+draw :: RenderInfo -> Resources -> Rendering ()
+draw (RenderInfo hud toDraw _) resources = do
     renderer <- ask
     clearScreen
     forM_ toDraw $ \(pos, angle, look) ->
