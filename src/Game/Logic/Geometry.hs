@@ -28,7 +28,7 @@ module Game.Logic.Geometry
     )
 where
 
-import Apecs (Component, Map, Storage)
+import Apecs (Component, Global, Map, Storage)
 import Linear (V2(..), (^*), distance)
 
 
@@ -163,3 +163,15 @@ collides infl (Position pos1, (Look w1 _ _)) (Position pos2, (Look w2 _ _)) =
 data ScreenEffect
     = ScreenShake
     | NoScreenEffect
+
+instance Semigroup ScreenEffect where
+    NoScreenEffect <> e = e
+    e <> NoScreenEffect = e
+    e <> _              = e
+
+instance Monoid ScreenEffect where
+    mempty = NoScreenEffect
+    mappend = (<>)
+
+instance Component ScreenEffect where
+    type Storage ScreenEffect = Global ScreenEffect

@@ -13,6 +13,7 @@ where
 import Control.Monad (forM_)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, runReaderT)
+import Control.Monad.State.Strict (MonadState, StateT, evalStateT, get, put)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, justifyRight, pack)
 import Foreign.C.Types (CDouble(..), CInt)
@@ -40,15 +41,21 @@ getDestination (Position pos) (Look width _ _) (SpriteSheet w h texture) =
 
 
 
+type ShakeTimeLine = TimeLine CInt
+
 newtype Rendering a = Rendering 
-    { getRendering :: ReaderT SDL.Renderer IO a
+    { getRendering :: ReaderT SDL.Renderer (StateT ShakeTimeLine IO) a
     }
     deriving (Functor, Applicative, Monad
              , MonadReader SDL.Renderer, MonadIO
+             , MonadState ShakeTimeLine
              )
 
 runRendering :: SDL.Renderer -> Rendering a -> IO a
-runRendering renderer = (`runReaderT` renderer) . getRendering
+runRendering renderer = 
+    (`evalStateT` makeTimeLineOnce []) .
+    (`runReaderT` renderer) . 
+    getRendering
 
 
 -- | Renders a Look to a position given data about sprites and a renderer
@@ -71,11 +78,36 @@ clearScreen = do
     SDL.rendererDrawColor renderer $= V4 0 0 0 255
 
 
+handleEffect :: ScreenEffect -> Rendering ()
+handleEffect NoScreenEffect = return ()
+handleEffect ScreenShake =
+    let tl = makeTimeLineOnce (zip [2,6..] [1,2,3,4,5,6,7,8,9,10,9,8,7,6,5,4,3,2,1,0])
+    in put tl
+
+-- | Handles the shake timeline
+handleShakeTimeLine :: Rendering ()
+handleShakeTimeLine = do
+    tl <- get
+    let (newTl, offset) = stepTimeLine tl 2
+    put newTl
+    maybe (return ()) moveViewPort offset
+  where
+    moveViewPort :: CInt -> Rendering ()
+    moveViewPort o =
+        let dest = P (V2 o 0)
+        in do
+            renderer <- ask
+            SDL.rendererViewport renderer $= Just (Rectangle dest (V2 600 800))
+        
+
+
 -- | Draws all the sprites, including the background
 draw :: RenderInfo -> Resources -> Rendering ()
-draw (RenderInfo hud toDraw _) resources = do
+draw (RenderInfo hud toDraw effect) resources = do
     renderer <- ask
     clearScreen
+    handleEffect effect
+    handleShakeTimeLine
     forM_ toDraw $ \(pos, angle, look) ->
         renderLook pos (fromMaybe (Angle 0) angle) look resources
     drawHud resources hud

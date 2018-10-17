@@ -122,6 +122,7 @@ makeWorld "World"
     , ''Enemy
     , ''GlobalTimeLine
     , ''LevelState
+    , ''ScreenEffect
     ]
 
 type Game a = System World a
@@ -152,6 +153,8 @@ stepGame dT input = do
 -- | Advances the game logic while currently in a level.
 stepLevel :: Double -> Input -> Game RenderInfo
 stepLevel dT input = do
+    -- reset screen effect
+    set global NoScreenEffect
     handleInput dT input
     handleScripts dT
     handleTimeLine dT
@@ -160,14 +163,15 @@ stepLevel dT input = do
     stepSpinning dT
     stepInvincibility dT
     clampPlayer
-    handleCollisions
+    playerHit <- handleCollisions
     deleteLowHealth
     deleteOffscreen
     floorScore
     checkPlayerHealth
     entities <- getAll
     hud <- get global
-    return (RenderInfo hud entities NoScreenEffect)
+    effect <- get global
+    return (RenderInfo hud entities effect)
 
 
 -- | Changes the game based on the player's input
@@ -303,6 +307,8 @@ handleCollisions = do
                 when (collidesAt (-26)) $ do
                     destroy etyB (Proxy @Unit)
                     set etyP (Invincible 0.5)
+                    -- trigger a screenshake
+                    set global ScreenShake
                     if not sameColor
                         then decrementPlayerHealth
                         else incrementScore 250
