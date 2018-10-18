@@ -306,9 +306,9 @@ handleCollisions = do
                 -- check for bad collision
                 when (collidesAt (-26)) $ do
                     destroy etyB (Proxy @Unit)
-                    set etyP (Invincible 0.5)
                     if not sameColor
                         then do
+                            set etyP (Invincible 0.5)
                             -- trigger a screenshake
                             set global ScreenShake
                             decrementPlayerHealth
