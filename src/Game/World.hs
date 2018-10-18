@@ -24,6 +24,7 @@ where
 import Apecs
 import Control.Monad (forM_, unless, void, when)
 import Data.Maybe (fromMaybe)
+import Data.Function ((&))
 import Linear (V2(..), (^*))
 
 import Game.Logic
@@ -90,8 +91,10 @@ type PlayerBulletUnit = (PlayerBullet, Visible)
 
 type Unit 
     = Either 
-      (Either BulletUnit PlayerBulletUnit) 
-      (Either PlayerUnit EnemyUnit)
+        ParticleUnit 
+        (Either 
+            (Either BulletUnit PlayerBulletUnit) 
+            (Either PlayerUnit EnemyUnit))
 
 -- | Represents the current state of the timeline
 data TimeLineState = TLPaused | TLRunning
@@ -106,6 +109,19 @@ data GlobalTimeLine = GlobalTimeLine TimeLineState (TimeLine LevelEvents)
 instance Component GlobalTimeLine where
     type Storage GlobalTimeLine = Unique GlobalTimeLine
 
+{- | Allows the timing of state transitions
+
+This is useful to transition to a different state of levels with a
+certain delay; for example, we can delay the game over state
+for a few seconds after the death of the player for dramatic effect
+-}
+data StateTransition
+    = TransitioningTo LevelState Double
+    | NotTransitioning
+
+instance Component StateTransition where
+    type Storage StateTransition = Unique StateTransition
+
 
 makeWorld "World"
     [ ''Position
@@ -119,8 +135,10 @@ makeWorld "World"
     , ''PlayerBullet
     , ''Bullet
     , ''BulletScript
+    , ''Particle
     , ''Enemy
     , ''GlobalTimeLine
+    , ''StateTransition
     , ''LevelState
     , ''ScreenEffect
     ]
@@ -162,12 +180,16 @@ stepLevel dT input = do
     stepKinetic dT
     stepSpinning dT
     stepInvincibility dT
+    stepAndKillParticles dT
     clampPlayer
     playerHit <- handleCollisions
     deleteLowHealth
     deleteOffscreen
     floorScore
     checkPlayerHealth
+    -- This needs to be done at the end because we may change into
+    -- a different level state
+    stepStateTransition dT
     entities <- getAll
     hud <- get global
     effect <- get global
@@ -271,6 +293,32 @@ stepInvincibility dT = cmap doStep
                 then NotInvincible
                 else Invincible now
 
+{- | Advances the state transition.
+
+This will also set the current state of the level to whatever is
+in the unique transition.
+-}
+stepStateTransition :: Double -> Game ()
+stepStateTransition dT = cmapM $ \case
+    NotTransitioning -> return NotTransitioning
+    TransitioningTo a d -> 
+        let now = d - dT
+        in if now <= 0
+            then do
+                set global a
+                return NotTransitioning
+            else
+                return (TransitioningTo a now)
+
+
+-- | Steps forward the lifetime of particles, killing when necessary
+stepAndKillParticles :: Double -> Game ()
+stepAndKillParticles dT = cmap $ \(Particle d) ->
+    let now = d - dT
+    in if now <= 0
+        then Left (Not @ Unit)
+        else Right (Particle now)
+
 
 -- | Keeps player within bounds
 clampPlayer :: Game ()
@@ -329,12 +377,28 @@ incrementScore toAdd = modify global $
 
 -- | Removes all enemies with no Health
 deleteLowHealth :: Game ()
-deleteLowHealth = cmapM $ \e@(Enemy, Health h) ->
-    if h <= 0
-        then do -- Delete enemy and increment score
+deleteLowHealth = cmapM deleteEnemies
+ where
+    deleteEnemies :: (Enemy, Health, Position, Look) 
+                  -> Game (Either (Not EnemyUnit) (Enemy, Health, Position, Look))
+    deleteEnemies e@(Enemy, Health h, pos, look)
+        | h <= 0   = do
             incrementScore 10000
+            createParticles pos look
             return (Left (Not @ EnemyUnit))
-        else return (Right e)
+        | otherwise = return (Right e)
+
+    createParticles pos (Look size shape polarity) =
+        let path pos =
+                divide 16 pos
+                & scaleTime 20
+                & scaleVelocity 60
+            particles = makeParticles
+                (Angle 0, AngularV 180) 
+                (Look (size / 3) shape polarity)
+                0.5
+                (path pos)
+        in forM_ particles newEntity
     
 -- | Deletes all visible particles whose position is offscreen
 deleteOffscreen :: Game ()
@@ -357,5 +421,11 @@ floorScore = modify global $
 -- | Set a game over if the player's health is <= 0
 checkPlayerHealth :: Game ()
 checkPlayerHealth = do
-    (InLevel _ h _) <- get global
-    when (h <= 0) (set global GameOver)
+    (InLevel p h s) <- get global
+    when (h <= 0) $ do
+        -- We only want to start a transition if we're not already transitioning
+        transition <- getAll :: Game [StateTransition]
+        when (null transition) . void $
+            newEntity (TransitioningTo GameOver 2)
+        -- delete the player and all components attached to it
+        cmap (\(Player _) -> Not @ Unit)

@@ -22,6 +22,9 @@ module Game.Logic.Patterns
     , pathWithLook
     , BulletScript(..)
     , noScript
+    , Particle(..)
+    , ParticleUnit
+    , makeParticles
     )
 where
 
@@ -225,3 +228,17 @@ Nothing
 -}
 noScript :: BulletScript
 noScript = BulletScript (makeTimeLineOnce [])
+
+
+-- | Represents a particle with a limited duration of life
+newtype Particle = Particle Double
+
+instance Component Particle where
+    type Storage Particle = Map Particle
+
+type ParticleUnit = (Particle, Visible)
+
+-- | Creates a list of particles from a path by applying constant visuals
+makeParticles :: Spinning -> Look -> Double -> Path -> [ParticleUnit]
+makeParticles spinning look lifetime (Path xs) =
+    map (\kin -> (Particle lifetime, (kin, spinning, look))) xs
