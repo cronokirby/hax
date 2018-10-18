@@ -81,14 +81,14 @@ clearScreen = do
 handleEffect :: ScreenEffect -> Rendering ()
 handleEffect NoScreenEffect = return ()
 handleEffect ScreenShake =
-    let tl = makeTimeLineOnce (zip [2,6..] [1,2,3,4,5,6,7,8,9,10,9,8,7,6,5,4,3,2,1,0])
+    let tl = makeTimeLineOnce (zip [0,0.002..] ([1..20] ++ [20,19..0]))
     in put tl
 
 -- | Handles the shake timeline
-handleShakeTimeLine :: Rendering ()
-handleShakeTimeLine = do
+handleShakeTimeLine :: Double -> Rendering ()
+handleShakeTimeLine dT = do
     tl <- get
-    let (newTl, offset) = stepTimeLine tl 2
+    let (newTl, offset) = stepTimeLine tl dT
     put newTl
     maybe (return ()) moveViewPort offset
   where
@@ -102,12 +102,12 @@ handleShakeTimeLine = do
 
 
 -- | Draws all the sprites, including the background
-draw :: RenderInfo -> Resources -> Rendering ()
-draw (RenderInfo hud toDraw effect) resources = do
+draw :: RenderInfo -> Resources -> Double -> Rendering ()
+draw (RenderInfo hud toDraw effect) resources dT = do
     renderer <- ask
     clearScreen
     handleEffect effect
-    handleShakeTimeLine
+    handleShakeTimeLine dT
     forM_ toDraw $ \(pos, angle, look) ->
         renderLook pos (fromMaybe (Angle 0) angle) look resources
     drawHud resources hud

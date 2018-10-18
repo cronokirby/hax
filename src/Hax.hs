@@ -57,7 +57,7 @@ mainLoop ticks resources input world = do
         newInput = gatherInput toggleCheck input
         dT = fromIntegral (newTicks - ticks) / 1000
     toDraw <- liftIO $ runWith world (stepGame dT newInput)
-    draw toDraw resources
+    draw toDraw resources dT
     unless quit $
         mainLoop newTicks resources newInput world
 
