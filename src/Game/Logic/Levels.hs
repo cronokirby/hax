@@ -135,8 +135,6 @@ mainLevel = makeTimeLineOnce
     enemyPos pos pol = 
         let someScript = BulletScript $ makeTimeLineRepeat 
                 [ (0.4, somePattern pol (somePath 32 pos))
-                , (0.6, somePattern pol (somePath 16 pos))
-                , (1, somePattern pol (somePath 8 pos))
                 ]
         in makeStaticEnemy (Position pos) (enemyLook pol) enemyHealth
             & enemyWithRotation (AngularV 120)
