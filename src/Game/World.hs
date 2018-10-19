@@ -423,3 +423,4 @@ checkPlayerHealth = do
     killPlayer (_, pos, look) = do
         forM_ (deathParticles 1 pos look) newEntity
         return Not
+    
