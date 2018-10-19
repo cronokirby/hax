@@ -25,6 +25,7 @@ module Game.Logic.Patterns
     , Particle(..)
     , ParticleUnit
     , makeParticles
+    , deathParticles
     )
 where
 
@@ -242,3 +243,16 @@ type ParticleUnit = (Particle, Visible)
 makeParticles :: Spinning -> Look -> Double -> Path -> [ParticleUnit]
 makeParticles spinning look lifetime (Path xs) =
     map (\kin -> (Particle lifetime, (kin, spinning, look))) xs
+
+
+-- | A good pattern of particle for entity deaths
+deathParticles :: Double -> Position -> Look -> [ParticleUnit]
+deathParticles lifetime pos (Look size shape polarity) =
+    divide 16 pos
+    & scaleTime 20
+    & scaleVelocity 120
+    & makeParticles
+        (Angle 0, AngularV 180)
+        (Look (size / 3) shape polarity)
+        lifetime
+    

@@ -384,21 +384,9 @@ deleteLowHealth = cmapM deleteEnemies
     deleteEnemies e@(Enemy, Health h, pos, look)
         | h <= 0   = do
             incrementScore 10000
-            createParticles pos look
+            forM_ (deathParticles 0.4 pos look) newEntity
             return (Left (Not @ EnemyUnit))
         | otherwise = return (Right e)
-
-    createParticles pos (Look size shape polarity) =
-        let path pos =
-                divide 16 pos
-                & scaleTime 20
-                & scaleVelocity 120
-            particles = makeParticles
-                (Angle 0, AngularV 180) 
-                (Look (size / 3) shape polarity)
-                0.4
-                (path pos)
-        in forM_ particles newEntity
     
 -- | Deletes all visible particles whose position is offscreen
 deleteOffscreen :: Game ()
@@ -426,6 +414,12 @@ checkPlayerHealth = do
         -- We only want to start a transition if we're not already transitioning
         transition <- getAll :: Game [StateTransition]
         when (null transition) . void $
-            newEntity (TransitioningTo GameOver 2)
+            newEntity (TransitioningTo GameOver 1)
         -- delete the player and all components attached to it
-        cmap (\(Player _) -> Not @ Unit)
+        -- create particles
+        cmapM killPlayer
+  where
+    killPlayer :: (Player, Position, Look) -> Game (Not Unit)
+    killPlayer (_, pos, look) = do
+        forM_ (deathParticles 1 pos look) newEntity
+        return Not
