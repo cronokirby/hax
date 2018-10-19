@@ -392,11 +392,11 @@ deleteLowHealth = cmapM deleteEnemies
         let path pos =
                 divide 16 pos
                 & scaleTime 20
-                & scaleVelocity 60
+                & scaleVelocity 120
             particles = makeParticles
                 (Angle 0, AngularV 180) 
                 (Look (size / 3) shape polarity)
-                0.5
+                0.4
                 (path pos)
         in forM_ particles newEntity
     
