@@ -10,6 +10,7 @@ module Game.Logic.Levels
     , Enemy(..)
     , EnemyUnit
     , GameOverSelect(..)
+    , TitleScreenSelect(..)
     , LevelState(..)
     , setHudColor
     , LevelEvents(..)
@@ -71,13 +72,19 @@ enemyWithScript script (tag, h, visible, _) =
 {- LevelState -}
 
 
+-- | Represents the selection options on the game over screen
 data GameOverSelect = GOContinue | GOTitleScreen deriving (Show)
+
+-- | Represents the selection options on the TitleScreen
+data TitleScreenSelect = TSPlay | TSScores deriving (Show)
 
 data LevelState
     -- | The game has finished (badly)
     = GameOver GameOverSelect Polarity
     -- | Player color, health, and global score
     | InLevel Polarity Int Int
+    -- | The game is at the title screen
+    | TitleScreen TitleScreenSelect Polarity
     deriving (Show)
 
 instance Semigroup LevelState where

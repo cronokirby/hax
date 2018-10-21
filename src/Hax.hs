@@ -35,7 +35,7 @@ run = do
     -- Initialising data
     resources <- loadProjectResources renderer
     world <- initWorld 
-    runWith world initialiseGame
+    runWith world makeNewGame
     -- Prepping rendering
     SDL.showWindow window
     -- Looping

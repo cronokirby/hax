@@ -16,7 +16,7 @@ module Game.World
     , worldWidth
     , worldHeight
     , initWorld
-    , initialiseGame
+    , makeNewGame
     , stepGame
     )
 where
@@ -146,6 +146,11 @@ makeWorld "World"
 type Game a = System World a
 
 
+-- | The entry point for a new game from the outside
+makeNewGame :: Game ()
+makeNewGame = initialiseGame Pink
+
+
 {- | Creates a new player with a certain color
 
 This is extracted from initialise game to be able to continue games as well
@@ -157,23 +162,30 @@ initialisePlayer p invincibility =
         velocity = Velocity 0
     in void $ newEntity (Player 0, invincibility, (pos, velocity, look))
 
--- | Initialises the game state with an initial player position
-initialiseGame :: Game ()
-initialiseGame = do
-    initialisePlayer Pink NotInvincible
-    newEntity (GlobalTimeLine TLRunning mainLevel)
-    set global (InLevel Pink 3 0)
-    --set global (GameOver GOContinue Pink)
+-- | Initialises the game state with an initial player color
+initialiseGame :: Polarity -> Game ()
+initialiseGame p =
+    set global (TitleScreen TSPlay p)
 
--- | Resets the game to its initial state, regardless of current state
-resetGame :: Game ()
-resetGame = do
+-- | Start the game to the first level with a certain color
+startPlaying :: Polarity -> Game ()
+startPlaying p = do
+    initialisePlayer p NotInvincible
+    newEntity (GlobalTimeLine TLRunning mainLevel)
+    set global (InLevel p 3 0)
+
+{- | Resets the game to its initial state, regardless of current state
+
+Needs a polarity to allow color coherency when resetting the game.
+-}
+resetGame :: Polarity -> Game ()
+resetGame p = do
     cmap (\Bullet       -> Not @ Unit)
     cmap (\(Player _)   -> Not @ Unit)
     cmap (\Enemy        -> Not @ Unit)
     cmap (\(Particle _) -> Not @ Unit)
     cmap (\(_ :: StateTransition) -> Not @ StateTransition)
-    initialiseGame
+    initialiseGame p
 
 
 -- | Steps the game forward with a delta and player input
@@ -183,37 +195,54 @@ stepGame dT input = do
     -- We might want to do this with some other mechanism
     hud <- get global
     case hud of
-        GameOver _ _  -> stepGameOver dT input
+        GameOver s p  -> 
+            let goContinue = do
+                    set global (InLevel p 3 0)
+                    initialisePlayer p (Invincible 1)
+                (index, action) = case s of
+                    GOContinue    -> (0, goContinue)
+                    GOTitleScreen -> (1, resetGame p)
+            in stepSelect dT input action index p $ \i p -> case (i, p) of
+                (0, p) -> Just (GameOver GOContinue p)
+                (1, p) -> Just (GameOver GOTitleScreen p)
+                _      -> Nothing
         InLevel _ _ _ -> stepLevel dT input
+        t@(TitleScreen s p) -> 
+            let (index, action) = case s of
+                    TSPlay   -> (0, startPlaying p)
+                    TSScores -> (1, startPlaying p)
+            in stepSelect dT input action index p $ \i p -> case (i, p) of
+                (0, p) -> Just (TitleScreen TSPlay p)
+                (1, p) -> Just (TitleScreen TSScores p)
+                _      -> Nothing
     
 
--- | Advance the game logic on the game over screen
-stepGameOver :: Double -> Input -> Game RenderInfo
-stepGameOver dT input
+-- | Advance the game logic on a select screen
+stepSelect :: Double -> Input 
+             -> Game ()  -- ^ action to perform if input is selected
+             -> Int -> Polarity -> (Int -> Polarity -> Maybe LevelState) -- ^ selection index
+             -> Game RenderInfo
+stepSelect dT input action index p makeState
     | getToggle $ inputSelect input = selectOption
     | otherwise                     = moveCursor
   where
     selectOption = do
-        (GameOver select p) <- get global
-        case select of
-            GOContinue -> do
-                set global (InLevel p 3 0)
-                initialisePlayer p (Invincible 1)
-            GOTitleScreen ->
-                resetGame
-        stepLevel dT input
+        action
+        hud <- get global
+        entities <- getAll
+        return (RenderInfo hud entities NoScreenEffect)
     moveCursor = do
-        (GameOver select p) <- get global
-        let newSelect = case (select, inputDirection input) of
-                (GOContinue, Direction _ (Just DDown))  -> GOTitleScreen
-                (GOTitleScreen, Direction _ (Just DUp)) -> GOContinue
-                (s, _)                                  -> s
+        let newIndex = index + case inputDirection input of
+                Direction _ (Just DDown) -> 1
+                Direction _ (Just DUp)   -> -1
+                _                        -> 0
             newColor = if getToggle $ inputSwitch input
                 then oppositePolarity p
                 else p
-            newHud = GameOver newSelect newColor
-        set global newHud
-        return (RenderInfo newHud [] NoScreenEffect)
+            newHud = makeState newIndex newColor
+        maybe (return ()) (set global) newHud
+        hud <- get global
+        return (RenderInfo hud [] NoScreenEffect)
 
 
 -- | Advances the game logic while currently in a level.

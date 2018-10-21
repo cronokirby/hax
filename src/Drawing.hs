@@ -131,7 +131,7 @@ drawHud resources (GameOver select p) =
         destTitle    = Just (Rectangle (P (V2 230 420)) (V2 140 36))
         baseLook = Look 28 SquareShape
         (pos, look@(Look _ _ polarity), colorC, colorT) = case select of
-            GOContinue    -> ( V2 190 390, baseLook p
+            GOContinue    -> ( V2 180 390, baseLook p
                              , polarityToColor p, white )
             GOTitleScreen -> ( V2 190 440, baseLook p
                              , white, polarityToColor p )
@@ -140,6 +140,21 @@ drawHud resources (GameOver select p) =
         drawText "game over" destGameOver white resources 
         drawText "continue" destContinue colorC resources
         drawText "give up" destTitle colorT resources
+        renderLook (Position pos) (Angle 0) look resources
+drawHud resources (TitleScreen select p) =
+    let destTitle  = Just (Rectangle (P (V2 150 100)) (V2 300 200))
+        destPlay   = Just (Rectangle (P (V2 230 400)) (V2 140 36))
+        destScores = Just (Rectangle (P (V2 220 450)) (V2 160 40))
+        baseLook = Look 28 SquareShape
+        (pos, look@(Look _ _ polarity), colorP, colorS) = case select of
+            TSPlay   -> ( V2 190 420, baseLook p
+                        , polarityToColor p, white )
+            TSScores -> ( V2 180 470, baseLook p
+                        , white, polarityToColor p )
+    in do
+        drawText "HAX" destTitle white resources
+        drawText "new game" destPlay colorP resources
+        drawText "scoreboard" destScores colorS resources
         renderLook (Position pos) (Angle 0) look resources
 drawHud resources (InLevel polarity health score) =
     let sprite = case polarity of
