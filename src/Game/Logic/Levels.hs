@@ -75,17 +75,17 @@ data GameOverSelect = GOContinue | GOTitleScreen deriving (Show)
 
 data LevelState
     -- | The game has finished (badly)
-    = GameOver GameOverSelect
+    = GameOver GameOverSelect Polarity
     -- | Player color, health, and global score
     | InLevel Polarity Int Int
     deriving (Show)
 
 instance Semigroup LevelState where
-    h <> (GameOver _) = h
+    h <> (GameOver _ _) = h
     _ <> h    = h
 
 instance Monoid LevelState where
-    mempty = GameOver GOContinue
+    mempty = GameOver GOContinue Pink
     mappend = (<>)
 
 instance Component LevelState where
@@ -101,7 +101,7 @@ LevelHud Blue 1
 NoHud
 -}
 setHudColor :: Polarity -> LevelState -> LevelState
-setHudColor _ (GameOver s)    = GameOver s
+setHudColor _ (GameOver s p)  = GameOver s p
 setHudColor p (InLevel _ i s) = InLevel p i s
 
 

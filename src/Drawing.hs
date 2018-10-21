@@ -125,16 +125,16 @@ draw (RenderInfo hud toDraw effect) resources dT = do
     
 -- | Draws the head up display
 drawHud :: Resources  -> LevelState -> Rendering ()
-drawHud resources (GameOver select) = 
+drawHud resources (GameOver select p) = 
     let destGameOver = Just (Rectangle (P (V2 180 250)) (V2 240 50))
         destContinue = Just (Rectangle (P (V2 220 370)) (V2 160 40))
         destTitle    = Just (Rectangle (P (V2 230 420)) (V2 140 36))
         baseLook = Look 28 SquareShape
         (pos, look@(Look _ _ polarity), colorC, colorT) = case select of
-            GOContinue    -> ( V2 190 390, baseLook Pink
-                             , polarityToColor Pink, white )
-            GOTitleScreen -> ( V2 190 440, baseLook Pink
-                             , white, polarityToColor Pink )
+            GOContinue    -> ( V2 190 390, baseLook p
+                             , polarityToColor p, white )
+            GOTitleScreen -> ( V2 190 440, baseLook p
+                             , white, polarityToColor p )
         
     in do
         drawText "game over" destGameOver white resources 

@@ -72,6 +72,7 @@ data Input = Input
     , inputSwitch :: ToggleInput -- ^ Trigger polarity switch
     , inputSlow :: HeldInput -- ^ Whether or not to move slower
     , inputDirection :: Direction -- ^ What direction is being input
+    , inputSelect :: ToggleInput -- ^ Used to select items, mainly for title screens
     }
 
 -- | The state of input before any interaction has been gathered
@@ -81,6 +82,7 @@ initialInput = Input
     makeToggle
     (HeldInput False)
     (Direction Nothing Nothing)
+    makeToggle
 
 {- | Gathers input based on what scancodes are currently activated.
 
@@ -88,8 +90,8 @@ Requires the previous input state to be able to advance the state
 of input gathering.
 -}
 gatherInput :: (SDL.Scancode -> Bool) -> Input -> Input
-gatherInput toggle (Input _ oldSwitch _ _) =
-    Input shooting switch fast direction
+gatherInput toggle (Input _ oldSwitch _ _ oldSelect) =
+    Input shooting switch fast direction select
   where
     shooting = HeldInput (toggle SDL.ScancodeJ)
     switch = advanceToggle (toggle SDL.ScancodeK) oldSwitch
@@ -97,3 +99,4 @@ gatherInput toggle (Input _ oldSwitch _ _) =
     leftRights = map toggle [SDL.ScancodeA, SDL.ScancodeD]
     upDowns = map toggle [SDL.ScancodeW, SDL.ScancodeS]
     direction = checkDirection leftRights upDowns
+    select = advanceToggle (toggle SDL.ScancodeReturn) oldSelect

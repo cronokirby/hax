@@ -40,7 +40,7 @@ worldHeight = 800
 
 -- | Converts a direction into instantaneous speed in px/s
 getSpeed :: Input -> Vec
-getSpeed (Input _ _ slow (Direction lr ud)) = (* speed) <$>
+getSpeed (Input _ _ slow (Direction lr ud) _) = (* speed) <$>
     defaultDir (fmap lrSpeed lr) + defaultDir (fmap udSpeed ud)
   where
     speed = if getHeld slow then 160 else 340
@@ -146,17 +146,35 @@ makeWorld "World"
 type Game a = System World a
 
 
--- | Initialises the game state with an initial player position
-initialiseGame :: Game ()
-initialiseGame =
-    let look = Look 28 SquareShape Pink
+{- | Creates a new player with a certain color
+
+This is extracted from initialise game to be able to continue games as well
+-}
+initialisePlayer :: Polarity -> Invincibility -> Game ()
+initialisePlayer p invincibility =
+    let look = Look 28 SquareShape p
         pos = Position (V2 300 600)
         velocity = Velocity 0
-    in void $ do
-        newEntity (Player 0, NotInvincible, (pos, velocity, look))
-        newEntity (GlobalTimeLine TLRunning mainLevel)
-        --set global (InLevel Pink 3 0)
-        set global (GameOver GOContinue)
+    in void $ newEntity (Player 0, invincibility, (pos, velocity, look))
+
+-- | Initialises the game state with an initial player position
+initialiseGame :: Game ()
+initialiseGame = do
+    initialisePlayer Pink NotInvincible
+    newEntity (GlobalTimeLine TLRunning mainLevel)
+    set global (InLevel Pink 3 0)
+    --set global (GameOver GOContinue Pink)
+
+-- | Resets the game to its initial state, regardless of current state
+resetGame :: Game ()
+resetGame = do
+    cmap (\Bullet       -> Not @ Unit)
+    cmap (\(Player _)   -> Not @ Unit)
+    cmap (\Enemy        -> Not @ Unit)
+    cmap (\(Particle _) -> Not @ Unit)
+    cmap (\(_ :: StateTransition) -> Not @ StateTransition)
+    initialiseGame
+
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game RenderInfo
@@ -165,20 +183,37 @@ stepGame dT input = do
     -- We might want to do this with some other mechanism
     hud <- get global
     case hud of
-        GameOver _    -> stepGameOver dT input
+        GameOver _ _  -> stepGameOver dT input
         InLevel _ _ _ -> stepLevel dT input
     
 
 -- | Advance the game logic on the game over screen
 stepGameOver :: Double -> Input -> Game RenderInfo
-stepGameOver dT input = do
-    (GameOver select) <- get global
-    let newSelect = case (select, inputDirection input) of
-            (GOContinue, Direction _ (Just DDown))  -> GOTitleScreen
-            (GOTitleScreen, Direction _ (Just DUp)) -> GOContinue
-            (s, _)                                  -> s
-    set global (GameOver newSelect)
-    return (RenderInfo (GameOver newSelect) [] NoScreenEffect)
+stepGameOver dT input
+    | getToggle $ inputSelect input = selectOption
+    | otherwise                     = moveCursor
+  where
+    selectOption = do
+        (GameOver select p) <- get global
+        case select of
+            GOContinue -> do
+                set global (InLevel p 3 0)
+                initialisePlayer p (Invincible 1)
+            GOTitleScreen ->
+                resetGame
+        stepLevel dT input
+    moveCursor = do
+        (GameOver select p) <- get global
+        let newSelect = case (select, inputDirection input) of
+                (GOContinue, Direction _ (Just DDown))  -> GOTitleScreen
+                (GOTitleScreen, Direction _ (Just DUp)) -> GOContinue
+                (s, _)                                  -> s
+            newColor = if getToggle $ inputSwitch input
+                then oppositePolarity p
+                else p
+            newHud = GameOver newSelect newColor
+        set global newHud
+        return (RenderInfo newHud [] NoScreenEffect)
 
 
 -- | Advances the game logic while currently in a level.
@@ -426,12 +461,17 @@ checkPlayerHealth = do
     when (h <= 0) $ do
         -- We only want to start a transition if we're not already transitioning
         transition <- getAll :: Game [StateTransition]
-        when (null transition) . void $
-            newEntity (TransitioningTo (GameOver GOContinue) 1)
+        -- The length of this will always be 1
+        case transition of
+            []                      -> doTransition p
+            [NotTransitioning]      -> doTransition p
+            [(TransitioningTo _ _)] -> return ()
         -- delete the player and all components attached to it
         -- create particles
         cmapM killPlayer
   where
+    doTransition p = void $
+        newEntity (TransitioningTo (GameOver GOContinue p) 1)
     killPlayer :: (Player, Position, Look) -> Game (Not Unit)
     killPlayer (_, pos, look) = do
         forM_ (deathParticles 1 pos look) newEntity

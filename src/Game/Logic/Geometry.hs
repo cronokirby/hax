@@ -20,6 +20,7 @@ module Game.Logic.Geometry
     , Spinning
     , Shape(..)
     , Polarity(..)
+    , oppositePolarity
     , polarityToColor
     , switchPolarity
     , Look(..)
@@ -124,10 +125,22 @@ data Shape = SquareShape | TriangleShape deriving (Show)
 -- | Represents the current polarity of some entity.
 data Polarity = Pink | Blue deriving (Eq, Show)
 
+{- | Returns the polarity opposed to this one
+
+>>> oppositePolarity Pink
+Blue
+>>> oppositePolarity Blue
+Pink
+-}
+oppositePolarity :: Polarity -> Polarity
+oppositePolarity Pink = Blue
+oppositePolarity Blue = Pink
+
 -- | Gives the corresponding RGBA color for a polarity
 polarityToColor :: Polarity -> V4 Word8
 polarityToColor Pink = V4 0xEA 0x44 0xB9 0xFF
 polarityToColor Blue = V4 0x3E 0xC0 0xE0 0xFF
+
 
 
 {- | Represents how some entity appears, based on shape, color, and scale.
@@ -148,8 +161,8 @@ without perturbing anything else.
 Look 1.0 SquareShape Blue
 -}
 switchPolarity :: Look -> Look
-switchPolarity (Look scale shape Pink) = Look scale shape Blue
-switchPolarity (Look scale shape Blue) = Look scale shape Pink
+switchPolarity (Look scale shape p) =
+    Look scale shape (oppositePolarity p)
 
 
 -- | Visible items can move and spin
