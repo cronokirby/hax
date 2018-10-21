@@ -165,9 +165,21 @@ stepGame dT input = do
     -- We might want to do this with some other mechanism
     hud <- get global
     case hud of
-        g@(GameOver _)  -> return (RenderInfo g [] NoScreenEffect)
+        GameOver _    -> stepGameOver dT input
         InLevel _ _ _ -> stepLevel dT input
     
+
+-- | Advance the game logic on the game over screen
+stepGameOver :: Double -> Input -> Game RenderInfo
+stepGameOver dT input = do
+    (GameOver select) <- get global
+    let newSelect = case (select, inputDirection input) of
+            (GOContinue, Direction _ (Just DDown))  -> GOTitleScreen
+            (GOTitleScreen, Direction _ (Just DUp)) -> GOContinue
+            (s, _)                                  -> s
+    set global (GameOver newSelect)
+    return (RenderInfo (GameOver newSelect) [] NoScreenEffect)
+
 
 -- | Advances the game logic while currently in a level.
 stepLevel :: Double -> Input -> Game RenderInfo
