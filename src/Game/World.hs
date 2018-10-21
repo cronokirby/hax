@@ -155,7 +155,8 @@ initialiseGame =
     in void $ do
         newEntity (Player 0, NotInvincible, (pos, velocity, look))
         newEntity (GlobalTimeLine TLRunning mainLevel)
-        set global (InLevel Pink 3 0)
+        --set global (InLevel Pink 3 0)
+        set global (GameOver GOContinue)
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game RenderInfo
@@ -164,8 +165,8 @@ stepGame dT input = do
     -- We might want to do this with some other mechanism
     hud <- get global
     case hud of
-        GameOver      -> return (RenderInfo GameOver [] NoScreenEffect)
-        (InLevel _ _ _) -> stepLevel dT input
+        g@(GameOver _)  -> return (RenderInfo g [] NoScreenEffect)
+        InLevel _ _ _ -> stepLevel dT input
     
 
 -- | Advances the game logic while currently in a level.
@@ -414,7 +415,7 @@ checkPlayerHealth = do
         -- We only want to start a transition if we're not already transitioning
         transition <- getAll :: Game [StateTransition]
         when (null transition) . void $
-            newEntity (TransitioningTo GameOver 1)
+            newEntity (TransitioningTo (GameOver GOContinue) 1)
         -- delete the player and all components attached to it
         -- create particles
         cmapM killPlayer

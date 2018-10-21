@@ -9,6 +9,7 @@ module Game.Logic.Levels
     ( Health(..)
     , Enemy(..)
     , EnemyUnit
+    , GameOverSelect(..)
     , LevelState(..)
     , setHudColor
     , LevelEvents(..)
@@ -69,19 +70,22 @@ enemyWithScript script (tag, h, visible, _) =
 
 {- LevelState -}
 
+
+data GameOverSelect = GOContinue | GOTitleScreen deriving (Show)
+
 data LevelState
     -- | The game has finished (badly)
-    = GameOver
+    = GameOver GameOverSelect
     -- | Player color, health, and global score
     | InLevel Polarity Int Int
     deriving (Show)
 
 instance Semigroup LevelState where
-    h <> GameOver = h
+    h <> (GameOver _) = h
     _ <> h    = h
 
 instance Monoid LevelState where
-    mempty = GameOver
+    mempty = GameOver GOContinue
     mappend = (<>)
 
 instance Component LevelState where
@@ -97,7 +101,7 @@ LevelHud Blue 1
 NoHud
 -}
 setHudColor :: Polarity -> LevelState -> LevelState
-setHudColor _ GameOver        = GameOver
+setHudColor _ (GameOver s)    = GameOver s
 setHudColor p (InLevel _ i s) = InLevel p i s
 
 

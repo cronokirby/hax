@@ -16,6 +16,7 @@ import Control.Monad.Reader (MonadReader, ReaderT, ask, runReaderT)
 import Control.Monad.State.Strict (MonadState, StateT, evalStateT, get, put)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, justifyRight, pack)
+import Data.Word (Word8)
 import Foreign.C.Types (CDouble(..), CInt)
 import qualified SDL
 import qualified SDL.Font
@@ -23,6 +24,15 @@ import SDL (($=), Rectangle(..), Point(..), V2(..), V4(..))
 
 import Game.Logic
 import Resources
+
+
+type Color = V4 Word8
+
+white :: Color
+white = V4 0xFF 0xFF 0xFF 0xFF
+
+black :: Color
+black = V4 0 0 0 0xFF
 
 
 -- | Gets the sprite index corresponding to a given look
@@ -75,7 +85,7 @@ clearScreen :: Rendering ()
 clearScreen = do
     renderer <- ask
     SDL.clear renderer
-    SDL.rendererDrawColor renderer $= V4 0 0 0 255
+    SDL.rendererDrawColor renderer $= black
 
 
 handleEffect :: ScreenEffect -> Rendering ()
@@ -115,9 +125,22 @@ draw (RenderInfo hud toDraw effect) resources dT = do
     
 -- | Draws the head up display
 drawHud :: Resources  -> LevelState -> Rendering ()
-drawHud resources GameOver  = 
-    let dest = Just (Rectangle (P (V2 200 350)) (V2 200 50))
-    in drawText "game over" dest resources
+drawHud resources (GameOver select) = 
+    let destGameOver = Just (Rectangle (P (V2 180 250)) (V2 240 50))
+        destContinue = Just (Rectangle (P (V2 220 370)) (V2 160 40))
+        destTitle    = Just (Rectangle (P (V2 230 420)) (V2 140 36))
+        baseLook = Look 28 SquareShape
+        (pos, look@(Look _ _ polarity), colorC, colorT) = case select of
+            GOContinue    -> ( V2 190 390, baseLook Pink
+                             , polarityToColor Pink, white )
+            GOTitleScreen -> ( V2 190 440, baseLook Pink
+                             , white, polarityToColor Pink )
+        
+    in do
+        drawText "game over" destGameOver white resources 
+        drawText "continue" destContinue colorC resources
+        drawText "give up" destTitle colorT resources
+        renderLook (Position pos) (Angle 0) look resources
 drawHud resources (InLevel polarity health score) =
     let sprite = case polarity of
             Pink -> SpHeartPink
@@ -132,15 +155,15 @@ drawHud resources (InLevel polarity health score) =
         drawScore score resources
     
 drawScore :: Int -> Resources -> Rendering ()
-drawScore score = drawText txt dest
+drawScore score = drawText txt dest white
  where
     correctedScore = min (max score 0) 999999999
     txt = justifyRight 9 '0' . pack . show $ correctedScore
     dest = Just (Rectangle (P (V2 390 5)) (V2 170 30))
 
-drawText :: Text -> Maybe (Rectangle CInt) -> Resources -> Rendering ()
-drawText txt dest (Resources _ font) = do
-    s <- SDL.Font.solid font (V4 0xFF 0xFF 0xFF 0xFF) txt
+drawText :: Text -> Maybe (Rectangle CInt) -> V4 Word8 -> Resources -> Rendering ()
+drawText txt dest color (Resources _ font) = do
+    s <- SDL.Font.solid font color txt
     renderer <- ask
     texture <- SDL.createTextureFromSurface renderer s
     SDL.copy renderer texture Nothing dest

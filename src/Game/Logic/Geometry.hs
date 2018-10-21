@@ -20,6 +20,7 @@ module Game.Logic.Geometry
     , Spinning
     , Shape(..)
     , Polarity(..)
+    , polarityToColor
     , switchPolarity
     , Look(..)
     , Visible
@@ -29,7 +30,8 @@ module Game.Logic.Geometry
 where
 
 import Apecs (Component, Global, Map, Storage)
-import Linear (V2(..), (^*), distance)
+import Data.Word (Word8)
+import Linear (V2(..), V4(..), (^*), distance)
 
 
 {- Straight Movement -}
@@ -121,6 +123,11 @@ data Shape = SquareShape | TriangleShape deriving (Show)
 
 -- | Represents the current polarity of some entity.
 data Polarity = Pink | Blue deriving (Eq, Show)
+
+-- | Gives the corresponding RGBA color for a polarity
+polarityToColor :: Polarity -> V4 Word8
+polarityToColor Pink = V4 0xEA 0x44 0xB9 0xFF
+polarityToColor Blue = V4 0x3E 0xC0 0xE0 0xFF
 
 
 {- | Represents how some entity appears, based on shape, color, and scale.
