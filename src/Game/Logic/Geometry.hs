@@ -119,7 +119,7 @@ type Spinning = (Angle, AngularV)
 {- How things look -}
 
 -- | Represents the current shape of some entity.
-data Shape = SquareShape | TriangleShape deriving (Show)
+data Shape = SquareShape deriving (Show)
 
 
 -- | Represents the current polarity of some entity.
