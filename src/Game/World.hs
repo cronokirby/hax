@@ -310,7 +310,7 @@ stepSelect dT input action index p makeState
 stepScoreBoard :: Input -> Game RenderInfo
 stepScoreBoard input = do
     when (getToggle $ inputSelect input) $
-        initialiseGame Pink
+        resetGame Pink
     hud <- get global
     return (RenderInfo hud [] NoScreenEffect)
 
