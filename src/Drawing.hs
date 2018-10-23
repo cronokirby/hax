@@ -139,6 +139,16 @@ drawLevel resources (GameOver select p _) =
         drawText "continue" destContinue colorC resources
         drawText "give up" destTitle colorT resources
         renderLook (Position pos) (Angle 0) look resources
+drawLevel resources (Congrats s) =
+    let destCongrats = Just (Rectangle (P (V2 50 100)) (V2 500 100))
+        destFS = Just (Rectangle (P (V2 150 300)) (V2 300 60))
+        destScore = Just (Rectangle (P (V2 200 400)) (V2 200 50))
+        scoreTxt = justifyRight 9 '0' . pack . show $ s
+    in do
+        drawText "congratulations!" destCongrats white resources
+        drawText "Final score" destFS white resources
+        drawText scoreTxt destScore white resources
+
 drawLevel resources (TitleScreen select p) =
     let destTitle  = Just (Rectangle (P (V2 150 100)) (V2 300 200))
         destPlay   = Just (Rectangle (P (V2 230 400)) (V2 140 36))

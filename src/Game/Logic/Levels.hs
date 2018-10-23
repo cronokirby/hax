@@ -81,6 +81,8 @@ data TitleScreenSelect = TSPlay | TSScores deriving (Show)
 data LevelState
     -- | The game has finished (badly)
     = GameOver GameOverSelect Polarity Int
+    -- | The game has finished (well)
+    | Congrats Int
     -- | Player color, health, and global score
     | InLevel Polarity Int Int
     -- | The game is at the title screen
@@ -120,19 +122,19 @@ setHudColor p (InLevel _ i s) = InLevel p i s
 data LevelEvents 
     = CreateEnemy EnemyUnit -- ^ Create a new enemy at a position
     | WaitForEnemies -- ^ Wait for enemies to die before advancing timeline
+    | EndGame -- ^ Finish the game
 
 instance Show LevelEvents where
     show (CreateEnemy _) = "CreateEnemy"
-    show WaitForEnemies = "WaitForEnemies"
+    show WaitForEnemies  = "WaitForEnemies"
+    show EndGame         = "EndGame"
 
 
 mainLevel :: TimeLine LevelEvents
 mainLevel = makeTimeLineOnce 
     [ (1, enemyPos (V2 300 200) Blue)
     , (1, WaitForEnemies)
-    , (2, enemyPos (V2 100 100) Pink)
-    , (2.2, WaitForEnemies)
-    , (3, enemyPos (V2 500 100) Pink)
+    , (1, EndGame)
     ]
   where
     bulletLook = Look 14 SquareShape
