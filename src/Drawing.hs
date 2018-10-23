@@ -111,19 +111,19 @@ handleShakeTimeLine dT = do
 
 -- | Draws all the sprites, including the background
 draw :: RenderInfo -> Resources -> Double -> Rendering ()
-draw (RenderInfo hud toDraw effect) resources dT = do
+draw (RenderInfo level toDraw effect) resources dT = do
     renderer <- ask
     clearScreen
     handleEffect effect
     handleShakeTimeLine dT
     forM_ toDraw $ \(pos, angle, look) ->
         renderLook pos (fromMaybe (Angle 0) angle) look resources
-    drawHud resources hud
+    drawLevel resources level
     SDL.present renderer
     
 -- | Draws the head up display
-drawHud :: Resources  -> LevelState -> Rendering ()
-drawHud resources (GameOver select p) = 
+drawLevel :: Resources  -> LevelState -> Rendering ()
+drawLevel resources (GameOver select p) = 
     let destGameOver = Just (Rectangle (P (V2 180 250)) (V2 240 50))
         destContinue = Just (Rectangle (P (V2 220 370)) (V2 160 40))
         destTitle    = Just (Rectangle (P (V2 230 420)) (V2 140 36))
@@ -139,7 +139,7 @@ drawHud resources (GameOver select p) =
         drawText "continue" destContinue colorC resources
         drawText "give up" destTitle colorT resources
         renderLook (Position pos) (Angle 0) look resources
-drawHud resources (TitleScreen select p) =
+drawLevel resources (TitleScreen select p) =
     let destTitle  = Just (Rectangle (P (V2 150 100)) (V2 300 200))
         destPlay   = Just (Rectangle (P (V2 230 400)) (V2 140 36))
         destScores = Just (Rectangle (P (V2 220 450)) (V2 160 40))
@@ -154,7 +154,7 @@ drawHud resources (TitleScreen select p) =
         drawText "new game" destPlay colorP resources
         drawText "scoreboard" destScores colorS resources
         renderLook (Position pos) (Angle 0) look resources
-drawHud resources (InLevel polarity health score) =
+drawLevel resources (InLevel polarity health score) =
     let sprite = case polarity of
             Pink -> SpHeartPink
             Blue -> SpHeartBlue
@@ -166,6 +166,20 @@ drawHud resources (InLevel polarity health score) =
                 renderer <- ask
                 SDL.copy renderer (sheetTexture sheet) source (dest (V2 x 10))
         drawScore score resources
+drawLevel resources (ScoreBoard scores) =
+    let first9 = map (max 0) $ take 9 scores
+    in forM_ (zip [1..] first9) $ \(i, x) -> do
+            let height = 70 * i
+                indexPos  = (V2 50 height)
+                indexTxt  = pack . show $ i
+                indexDest = Just (Rectangle (P indexPos) (V2 40 40))
+                scorePos  = (V2 200 height)
+                scoreTxt  = justifyRight 9 '0' . pack . show $ x
+                scoreDest = Just (Rectangle (P scorePos) (V2 300 40))
+            drawText indexTxt indexDest white resources
+            drawText scoreTxt scoreDest white resources 
+            return ()
+
     
 drawScore :: Int -> Resources -> Rendering ()
 drawScore score = drawText txt dest white

@@ -165,7 +165,8 @@ initialisePlayer p invincibility =
 -- | Initialises the game state with an initial player color
 initialiseGame :: Polarity -> Game ()
 initialiseGame p =
-    set global (TitleScreen TSPlay p)
+    --set global (TitleScreen TSPlay p)
+    set global (ScoreBoard [1..9])
 
 -- | Start the game to the first level with a certain color
 startPlaying :: Polarity -> Game ()
@@ -207,7 +208,7 @@ stepGame dT input = do
                 (1, p) -> Just (GameOver GOTitleScreen p)
                 _      -> Nothing
         InLevel _ _ _ -> stepLevel dT input
-        t@(TitleScreen s p) -> 
+        TitleScreen s p -> 
             let (index, action) = case s of
                     TSPlay   -> (0, startPlaying p)
                     TSScores -> (1, startPlaying p)
@@ -215,6 +216,7 @@ stepGame dT input = do
                 (0, p) -> Just (TitleScreen TSPlay p)
                 (1, p) -> Just (TitleScreen TSScores p)
                 _      -> Nothing
+        s@(ScoreBoard _) -> return (RenderInfo s [] NoScreenEffect)
     
 
 -- | Advance the game logic on a select screen

@@ -85,6 +85,8 @@ data LevelState
     | InLevel Polarity Int Int
     -- | The game is at the title screen
     | TitleScreen TitleScreenSelect Polarity
+    -- | The scoreboard with a list of scores
+    | ScoreBoard [Int]
     deriving (Show)
 
 instance Semigroup LevelState where
