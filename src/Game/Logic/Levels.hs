@@ -80,7 +80,7 @@ data TitleScreenSelect = TSPlay | TSScores deriving (Show)
 
 data LevelState
     -- | The game has finished (badly)
-    = GameOver GameOverSelect Polarity
+    = GameOver GameOverSelect Polarity Int
     -- | Player color, health, and global score
     | InLevel Polarity Int Int
     -- | The game is at the title screen
@@ -90,11 +90,11 @@ data LevelState
     deriving (Show)
 
 instance Semigroup LevelState where
-    h <> (GameOver _ _) = h
+    h <> (GameOver _ _ _) = h
     _ <> h    = h
 
 instance Monoid LevelState where
-    mempty = GameOver GOContinue Pink
+    mempty = GameOver GOContinue Pink 0
     mappend = (<>)
 
 instance Component LevelState where
@@ -110,7 +110,7 @@ LevelHud Blue 1
 NoHud
 -}
 setHudColor :: Polarity -> LevelState -> LevelState
-setHudColor _ (GameOver s p)  = GameOver s p
+setHudColor _ (GameOver s p sc)  = GameOver s p sc
 setHudColor p (InLevel _ i s) = InLevel p i s
 
 

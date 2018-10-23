@@ -123,7 +123,7 @@ draw (RenderInfo level toDraw effect) resources dT = do
     
 -- | Draws the head up display
 drawLevel :: Resources  -> LevelState -> Rendering ()
-drawLevel resources (GameOver select p) = 
+drawLevel resources (GameOver select p _) = 
     let destGameOver = Just (Rectangle (P (V2 180 250)) (V2 240 50))
         destContinue = Just (Rectangle (P (V2 220 370)) (V2 160 40))
         destTitle    = Just (Rectangle (P (V2 230 420)) (V2 140 36))

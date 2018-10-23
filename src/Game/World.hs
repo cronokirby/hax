@@ -1,12 +1,13 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-|
 Description: contains the things pertaining to the model of the game state
 -}
@@ -123,6 +124,29 @@ instance Component StateTransition where
     type Storage StateTransition = Unique StateTransition
 
 
+-- | Represents the global scores attached to a game
+newtype GameScores = GameScores [Int] deriving (Semigroup, Monoid)
+
+instance Component GameScores where
+    type Storage GameScores = Global GameScores
+
+
+{- | Attempts to insert a score into the board
+
+Returns Nothing if the new score doesn't surpass any of the old ones.
+Preserves the number of scores
+-}
+insertScore :: Int -> GameScores -> Maybe GameScores
+insertScore s (GameScores scores) = GameScores <$> go s scores
+  where
+    go :: Int -> [Int] -> Maybe [Int]
+    go s [] = Nothing
+    go s (x:xs)
+        | s > x     = Just (s:xs) 
+        | otherwise = (x:) <$> go s xs
+
+
+
 makeWorld "World"
     [ ''Position
     , ''Velocity
@@ -139,6 +163,7 @@ makeWorld "World"
     , ''Enemy
     , ''GlobalTimeLine
     , ''StateTransition
+    , ''GameScores
     , ''LevelState
     , ''ScreenEffect
     ]
@@ -148,7 +173,9 @@ type Game a = System World a
 
 -- | The entry point for a new game from the outside
 makeNewGame :: Game ()
-makeNewGame = initialiseGame Pink
+makeNewGame = do
+    initialiseGame Pink
+    set global (GameScores . take 10 $ repeat 0)
 
 
 {- | Creates a new player with a certain color
@@ -190,8 +217,9 @@ resetGame p = do
 
 -- | Moves the game to the score board
 moveToScoreBoard :: Game ()
-moveToScoreBoard =
-    set global (ScoreBoard [1..9])
+moveToScoreBoard = do
+    (GameScores scores) <- get global
+    set global (ScoreBoard scores)
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game RenderInfo
@@ -200,16 +228,23 @@ stepGame dT input = do
     -- We might want to do this with some other mechanism
     hud <- get global
     case hud of
-        GameOver s p  -> 
+        GameOver s p sc -> 
             let goContinue = do
                     set global (InLevel p 3 0)
                     initialisePlayer p (Invincible 1)
+                goTitleScreen = do
+                    scores <- get global
+                    case insertScore sc scores of
+                        Nothing     -> resetGame p
+                        Just scores@(GameScores l) -> do
+                            set global scores
+                            set global (ScoreBoard l)
                 (index, action) = case s of
                     GOContinue    -> (0, goContinue)
-                    GOTitleScreen -> (1, resetGame p)
+                    GOTitleScreen -> (1, goTitleScreen)
             in stepSelect dT input action index p $ \i p -> case (i, p) of
-                (0, p) -> Just (GameOver GOContinue p)
-                (1, p) -> Just (GameOver GOTitleScreen p)
+                (0, p) -> Just (GameOver GOContinue p sc)
+                (1, p) -> Just (GameOver GOTitleScreen p sc)
                 _      -> Nothing
         InLevel _ _ _ -> stepLevel dT input
         TitleScreen s p -> 
@@ -507,15 +542,15 @@ checkPlayerHealth = do
         transition <- getAll :: Game [StateTransition]
         -- The length of this will always be 1
         case transition of
-            []                      -> doTransition p
-            [NotTransitioning]      -> doTransition p
+            []                      -> doTransition p s
+            [NotTransitioning]      -> doTransition p s
             [(TransitioningTo _ _)] -> return ()
         -- delete the player and all components attached to it
         -- create particles
         cmapM killPlayer
   where
-    doTransition p = void $
-        newEntity (TransitioningTo (GameOver GOContinue p) 1)
+    doTransition p s = void $ do
+        newEntity (TransitioningTo (GameOver GOContinue p s) 1)
     killPlayer :: (Player, Position, Look) -> Game (Not Unit)
     killPlayer (_, pos, look) = do
         forM_ (deathParticles 1 pos look) newEntity
