@@ -165,8 +165,7 @@ initialisePlayer p invincibility =
 -- | Initialises the game state with an initial player color
 initialiseGame :: Polarity -> Game ()
 initialiseGame p =
-    --set global (TitleScreen TSPlay p)
-    set global (ScoreBoard [1..9])
+    set global (TitleScreen TSPlay p)
 
 -- | Start the game to the first level with a certain color
 startPlaying :: Polarity -> Game ()
@@ -188,6 +187,11 @@ resetGame p = do
     cmap (\(_ :: StateTransition) -> Not @ StateTransition)
     initialiseGame p
 
+
+-- | Moves the game to the score board
+moveToScoreBoard :: Game ()
+moveToScoreBoard =
+    set global (ScoreBoard [1..9])
 
 -- | Steps the game forward with a delta and player input
 stepGame :: Double -> Input -> Game RenderInfo
@@ -211,12 +215,12 @@ stepGame dT input = do
         TitleScreen s p -> 
             let (index, action) = case s of
                     TSPlay   -> (0, startPlaying p)
-                    TSScores -> (1, startPlaying p)
+                    TSScores -> (1, moveToScoreBoard)
             in stepSelect dT input action index p $ \i p -> case (i, p) of
                 (0, p) -> Just (TitleScreen TSPlay p)
                 (1, p) -> Just (TitleScreen TSScores p)
                 _      -> Nothing
-        s@(ScoreBoard _) -> return (RenderInfo s [] NoScreenEffect)
+        ScoreBoard _ -> stepScoreBoard input
     
 
 -- | Advance the game logic on a select screen
@@ -245,6 +249,15 @@ stepSelect dT input action index p makeState
         maybe (return ()) (set global) newHud
         hud <- get global
         return (RenderInfo hud [] NoScreenEffect)
+
+
+-- | Advances the scoreboard logic based on input
+stepScoreBoard :: Input -> Game RenderInfo
+stepScoreBoard input = do
+    when (getToggle $ inputSelect input) $
+        initialiseGame Pink
+    hud <- get global
+    return (RenderInfo hud [] NoScreenEffect)
 
 
 -- | Advances the game logic while currently in a level.
