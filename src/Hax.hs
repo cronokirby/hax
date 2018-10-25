@@ -7,10 +7,13 @@ where
 import Apecs (runWith)
 import Control.Monad (forM, unless)
 import Control.Monad.IO.Class (liftIO)
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import Data.Word (Word32)
 import Linear (V2(..))
 import qualified SDL
 import qualified SDL.Font
+import qualified System.IO as IO
 
 import Drawing (Rendering, runRendering, draw)
 import Game.Input (Input, initialInput, gatherInput)
@@ -35,7 +38,8 @@ run = do
     -- Initialising data
     resources <- loadProjectResources renderer
     world <- initWorld 
-    runWith world makeNewGame
+    scores <- readScores
+    runWith world (makeNewGame scores)
     -- Prepping rendering
     SDL.showWindow window
     -- Looping
@@ -58,8 +62,9 @@ mainLoop ticks resources input world = do
         dT = fromIntegral (newTicks - ticks) / 1000
     toDraw <- liftIO $ runWith world (stepGame dT newInput)
     draw toDraw resources dT
-    unless quit $
-        mainLoop newTicks resources newInput world
+    if quit 
+        then liftIO $ closeGame world
+        else mainLoop newTicks resources newInput world
 
 
 -- | This is true of the window needs to close, or esc is prssed
@@ -70,3 +75,28 @@ shouldQuit event = case SDL.eventPayload event of
         SDL.keysymKeycode (SDL.keyboardEventKeysym kb) == SDL.KeycodeEscape
     SDL.QuitEvent -> True
     _ -> False
+
+
+-- TODO: Don't use a hardcoded file
+
+-- | Closes the game and saves the scores
+closeGame :: World -> IO ()
+closeGame world = do
+    scores <- runWith world exitInfo
+    let textScores = map (T.pack . show) scores
+        scoreString = T.intercalate "\n" textScores
+    IO.withFile ".scores" IO.WriteMode $ \h ->
+        T.hPutStr h scoreString
+
+
+{- | Reads the scores into a list
+
+This method will crash if the input file is bad in any
+respect, but since we control what goes into the score file
+this is fine.
+-}
+readScores :: IO [Int]
+readScores = IO.withFile ".scores" IO.ReadMode $ \h -> do
+    txt <- T.hGetContents h
+    let scores = map (read . T.unpack) (T.lines txt)
+    return scores

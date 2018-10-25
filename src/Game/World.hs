@@ -19,6 +19,7 @@ module Game.World
     , initWorld
     , makeNewGame
     , stepGame
+    , exitInfo
     )
 where
 
@@ -187,10 +188,10 @@ startTransition state time = do
 {- Entry point for game logic -}
 
 -- | The entry point for a new game from the outside
-makeNewGame :: Game ()
-makeNewGame = do
+makeNewGame :: [Int] -> Game ()
+makeNewGame scores = do
     initialiseGame Pink
-    set global (GameScores . take 10 $ repeat 0)
+    set global (GameScores . take 10 $ scores)
 
 
 {- | Creates a new player with a certain color
@@ -228,6 +229,17 @@ resetGame p = do
     cmap (\(Particle _) -> Not @ Unit)
     cmap (\(_ :: StateTransition) -> Not @ StateTransition)
     initialiseGame p
+
+
+{- | Returns the necessary information to quit the game
+
+At the moment this is just the current scoreboard, but this could
+be extended to support other functionality.
+-}
+exitInfo :: Game [Int]
+exitInfo = do
+    GameScores scores <- get global
+    return scores
 
 
 -- | Moves the game to the score board
