@@ -13,6 +13,7 @@ import Data.Word (Word32)
 import Linear (V2(..))
 import qualified SDL
 import qualified SDL.Font
+import System.Directory (doesFileExist)
 import qualified System.IO as IO
 
 import Drawing (Rendering, runRendering, draw)
@@ -96,7 +97,13 @@ respect, but since we control what goes into the score file
 this is fine.
 -}
 readScores :: IO [Int]
-readScores = IO.withFile ".scores" IO.ReadMode $ \h -> do
-    txt <- T.hGetContents h
-    let scores = map (read . T.unpack) (T.lines txt)
-    return scores
+readScores = do
+    exists <- doesFileExist ".scores"
+    if exists
+        then doread
+        else return (take 10 $ repeat 0)
+  where
+    doread = IO.withFile ".scores" IO.ReadMode $ \h -> do
+        txt <- T.hGetContents h
+        let scores = map (read . T.unpack) (T.lines txt)
+        return scores
